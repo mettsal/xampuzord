@@ -1,0 +1,14 @@
+# .gitignore
+*.pyc
+__pycache__/
+instance/
+.env
+*.db
+static/uploads/
+venv/
+env/
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

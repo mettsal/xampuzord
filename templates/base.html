@@ -1,0 +1,67 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Xampu Para Ossos{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="border-b border-current p-4 mb-8">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="{{ url_for('index') }}" class="text-2xl font-bold cyber-glow flex items-center gap-3">
+                <div class="logo-placeholder">🧴</div>
+                XAMPU PARA OSSOS</a>
+            <div class="flex items-center gap-4">
+                <a href="#" class="px-3 py-1 border border-current hover:bg-current hover:text-inverse">SOBRE</a>
+                <a href="#" class="px-3 py-1 border border-current hover:bg-current hover:text-inverse">CATEGORIAS</a>
+                <input type="text" id="searchBar" placeholder="Search tags..." 
+                       class="px-3 py-1 bg-transparent border border-current">
+                <button id="themeToggle" class="px-3 py-1 border border-current hover:bg-current hover:text-inverse">
+                    ⚡ Tema
+                </button>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('new_post') }}" class="px-3 py-1 border border-current hover:bg-current hover:text-inverse">
+                        + Novo Post
+                    </a>
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('admin') }}" class="px-3 py-1 border border-current hover:bg-current hover:text-inverse">
+                            Xampu
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}" class="px-3 py-1 border border-current hover:bg-current hover:text-inverse">
+                        Sair ({{ current_user.username }})
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="px-3 py-1 border border-current hover:bg-current hover:text-inverse">
+                        Entrar
+                    </a>
+                    <a href="{{ url_for('register') }}" class="px-3 py-1 border border-current hover:bg-current hover:text-inverse">
+                        Cadastrar Pseudônimo
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-3 border border-current bg-opacity-10 bg-current">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

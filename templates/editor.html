@@ -1,0 +1,100 @@
+<!-- templates/editor-new.html -->
+{% extends "base.html" %}
+
+{% block title %}{% if post %}Editar Post{% else %}Novo Post{% endif %} - Xampu Para Ossos{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <h2 class="text-2xl font-bold mb-6 cyber-glow">
+        {% if post %}Editar Post{% else %}Novo Post{% endif %}
+    </h2>
+
+    <form id="postForm" method="POST">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Editor Panel -->
+            <div>
+                <input type="text" name="title" id="postTitle" 
+                       value="{{ post.title if post else '' }}"
+                       placeholder="Título" 
+                       class="w-full mb-3 p-2 bg-transparent border border-current" required>
+                
+                <div class="mb-3 flex gap-2">
+                    <select name="font" id="fontSelector" class="px-2 py-1 bg-transparent border border-current">
+                        <option value="Consolas" {% if post and post.font == 'Consolas' %}selected{% endif %}>Consolas</option>
+                        <option value="Courier New" {% if post and post.font == 'Courier New' %}selected{% endif %}>Courier New</option>
+                        <option value="Monaco" {% if post and post.font == 'Monaco' %}selected{% endif %}>Monaco</option>
+                        <option value="Fira Code" {% if post and post.font == 'Fira Code' %}selected{% endif %}>Fira Code</option>
+                    </select>
+                    
+                    <input type="text" name="tags" id="tagInput" 
+                           value="{% if post %}{{ post.tags|map(attribute='value')|join(', ') }}{% endif %}"
+                           placeholder="Tags (comma-separated)" 
+                           class="flex-1 px-2 py-1 bg-transparent border border-current">
+                </div>
+                
+                <textarea name="body" id="postBody" 
+                          placeholder="Padrão : Markdown" 
+                          class="w-full h-64 p-3 bg-transparent border border-current font-mono" required>{% if post %}{{ post.body_html }}{% endif %}</textarea>
+                
+                <!-- Teaser Section -->
+                <div class="mt-4 p-3 border border-current">
+                    <h4 class="text-sm font-bold mb-2">Preview do Post:</h4>
+                    
+                    <div class="mb-3">
+                        <label class="block text-xs mb-1">Tipo de Preview:</label>
+                        <select name="teaser_type" id="teaserType" class="w-full px-2 py-1 bg-transparent border border-current">
+                            <option value="auto" {% if post and post.teaser_type == 'auto' %}selected{% endif %}>Automático (texto)</option>
+                            <option value="image" {% if post and post.teaser_type == 'image' %}selected{% endif %}>Imagem</option>
+                            <option value="none" {% if post and post.teaser_type == 'none' %}selected{% endif %}>Nenhum</option>
+                        </select>
+                    </div>
+                    
+                    <div id="imageUploadSection" class="mb-3" style="display: {% if post and post.teaser_type == 'image' %}block{% else %}none{% endif %}">
+                        <label class="block text-xs mb-1">Imagem de Preview:</label>
+                        <div id="uploadArea" class="border-2 border-dashed border-current p-4 text-center cursor-pointer hover:bg-opacity-10 hover:bg-current transition-all">
+                            <input type="file" id="teaserImageInput" accept="image/*" class="hidden">
+                            <div id="uploadText">
+                                <span class="text-sm">📁 Clique ou arraste uma imagem aqui</span>
+                                <br>
+                                <span class="text-xs opacity-70">PNG, JPG, GIF, WEBP (máx. 16MB)</span>
+                            </div>
+                            <div id="uploadProgress" class="hidden">
+                                <span class="text-sm">⏳ Enviando...</span>
+                            </div>
+                        </div>
+                        
+                        <div id="imagePreview" class="mt-2 {% if not (post and post.teaser_image) %}hidden{% endif %}">
+                            <img id="previewImg" src="{% if post and post.teaser_image %}/static/{{ post.teaser_image }}{% endif %}" alt="Preview" class="max-w-full h-32 object-cover border border-current">
+                            <button type="button" id="removeImage" class="mt-1 text-xs px-2 py-1 border border-current hover:bg-current hover:text-inverse">
+                                Remover Imagem
+                            </button>
+                        </div>
+                        
+                        <input type="hidden" name="teaser_image" id="teaserImagePath" value="{% if post %}{{ post.teaser_image or '' }}{% endif %}">
+                    </div>
+                </div>
+                
+                <div class="mt-3 flex gap-2">
+                    <button type="submit" class="px-4 py-2 border border-current hover:bg-current hover:text-inverse">
+                        Salvar Post
+                    </button>
+                    <button type="button" id="togglePreview" class="px-4 py-2 border border-current hover:bg-current hover:text-inverse">
+                        Prévia
+                    </button>
+                    <a href="{{ url_for('index') }}" class="px-4 py-2 border border-current hover:bg-current hover:text-inverse">
+                        Cancelar
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Preview Panel -->
+            <div id="previewPanel" class="editor-preview hidden">
+                <h3 class="text-lg font-bold mb-2">Prévia:</h3>
+                <div id="previewContent" class="prose prose-invert max-w-none"></div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script src="{{ url_for('static', filename='js/editor.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,28 @@
+<!-- templates/login.html -->
+{% extends "base.html" %}
+
+{% block title %}Login - Cybernetic Poetry{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <h2 class="text-2xl font-bold mb-6 cyber-glow text-center">LOGIN</h2>
+    
+    <form method="POST" class="space-y-4">
+        <div>
+            <input type="text" name="username" placeholder="Username" 
+                   class="w-full p-3 bg-transparent border border-current" required>
+        </div>
+        <div>
+            <input type="password" name="password" placeholder="Password" 
+                   class="w-full p-3 bg-transparent border border-current" required>
+        </div>
+        <button type="submit" class="w-full p-3 border border-current hover:bg-current hover:text-inverse">
+            ENTER THE CYBERSPACE
+        </button>
+    </form>
+    
+    <p class="mt-6 text-center text-sm opacity-70">
+        New to the grid? <a href="{{ url_for('register') }}" class="underline">Register here</a>
+    </p>
+</div>
+{% endblock %}
