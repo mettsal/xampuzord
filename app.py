@@ -240,7 +240,7 @@ def edit_post(post_id):
         db.session.commit()
         
         if request.is_json:
-            return jsonify({'success': True})
+            return jsonify({'success': True, 'post_id': post.id})
         return redirect(url_for('view_post', post_id=post.id))
     
     return render_template('editor.html', post=post)
@@ -342,7 +342,7 @@ def user_settings():
         data = request.get_json()
         current_user.settings = data
         db.session.commit()
-        return jsonify({'success': True})
+        return jsonify({'success': True, 'post_id': post.id})
     
     return jsonify(current_user.settings)
 

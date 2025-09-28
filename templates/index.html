@@ -4,28 +4,24 @@
 {% block content %}
 <div id="postGrid" class="grid grid-cols-1 md:grid-cols-3 gap-0 mb-8">
     {% for post in posts %}
-    <div class="post-card p-0 hover:scale-105 transition-transform cursor-pointer" 
+    <div class="post-card p-0 hover:scale-105 transition-transform cursor-pointer relative" 
          onclick="window.location.href='{{ url_for('view_post', post_id=post.id) }}'">
         
         <!-- Teaser Image or Text Preview -->
         {% if post.teaser_type == 'image' and post.teaser_image %}
-            <div class="teaser-image">
+            <!-- Full container image with overlay -->
+            <div class="teaser-image absolute inset-0">
                 <img src="/static/{{ post.teaser_image }}" alt="{{ post.title }}">
             </div>
-            <div class="p-4">
-                <h3 class="text-lg font-bold mb-2">{{ post.title }}</h3>
-                <div class="text-sm mb-3 opacity-70">
-                    @{{ post.author.username }} • {{ post.created_at.strftime('%d/%m/%Y') }}
-                </div>
-                <div class="flex flex-wrap gap-2 mb-2">
+            <div class="absolute inset-0 flex flex-col justify-between p-4 overlay-content">
+                <div></div> <!-- Spacer for centering -->
+                <h3 class="text-center text-lg glowy-title">{{ post.title }}</h3>
+                <div class="flex flex-wrap gap-2 justify-center">
                     {% for tag in post.tags %}
                     <span class="tag-pill px-2 py-1 text-xs border border-current">
                         {{ tag.value }}
                     </span>
                     {% endfor %}
-                </div>
-                <div class="text-xs opacity-50">
-                    👁 {{ post.views }} views
                 </div>
             </div>
         {% elif post.teaser_type == 'none' %}
@@ -48,23 +44,19 @@
             </div>
         {% else %}
             <!-- Auto text preview (default) -->
-            <div class="p-4">
-                <h3 class="text-lg font-bold mb-2">{{ post.title }}</h3>
-                <div class="text-sm mb-3 opacity-70">
-                    @{{ post.author.username }} • {{ post.created_at.strftime('%d/%m/%Y') }}
-                </div>
-                <div class="mb-3 line-clamp-4 post-body">
+            <div class="text-preview-container absolute inset-0 flex flex-col justify-center items-center py-4">
+                <div class="text-center post-body text-preview-content">
                     {{ post.body_html|safe }}
                 </div>
-                <div class="flex flex-wrap gap-2 mb-2">
-                    {% for tag in post.tags %}
-                    <span class="tag-pill px-2 py-1 text-xs border border-current">
-                        {{ tag.value }}
-                    </span>
-                    {% endfor %}
-                </div>
-                <div class="text-xs opacity-50">
-                    👁 {{ post.views }} views
+                <div class="absolute bottom-4 left-4 right-4">
+                    <h3 class="text-center text-sm glowy-title mb-2">{{ post.title }}</h3>
+                    <div class="flex flex-wrap gap-1 justify-center">
+                        {% for tag in post.tags %}
+                        <span class="tag-pill px-1 py-0.5 text-xs border border-current">
+                            {{ tag.value }}
+                        </span>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         {% endif %}

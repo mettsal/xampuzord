@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create post card element with teaser support
     function createPostCard(post) {
         const card = document.createElement('div');
-        card.className = 'post-card p-0 hover:scale-105 transition-transform cursor-pointer';
+        card.className = 'post-card p-0 hover:scale-105 transition-transform cursor-pointer relative';
         
         const tagsHtml = post.tags.map(tag => `
             <span class="tag-pill px-2 py-1 text-xs border border-current">
@@ -104,19 +104,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle different teaser types
         if (post.teaser_type === 'image' && post.teaser_image) {
             cardContent = `
-                <div class="teaser-image">
+                <div class="teaser-image absolute inset-0">
                     <img src="/static/${post.teaser_image}" alt="${post.title}">
                 </div>
-                <div class="p-4">
-                    <h3 class="text-lg font-bold mb-2">${post.title}</h3>
-                    <div class="text-sm mb-3 opacity-70">
-                        @${post.author} • ${new Date(post.created_at).toLocaleDateString('pt-BR')}
-                    </div>
-                    <div class="flex flex-wrap gap-2 mb-2">
+                <div class="absolute inset-0 flex flex-col justify-between p-4 overlay-content">
+                    <div></div>
+                    <h3 class="text-center text-lg glowy-title">${post.title}</h3>
+                    <div class="flex flex-wrap gap-2 justify-center">
                         ${tagsHtml}
-                    </div>
-                    <div class="text-xs opacity-50">
-                        👁 ${post.views} views
                     </div>
                 </div>
             `;
@@ -139,19 +134,15 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // Auto text preview (default)
             cardContent = `
-                <div class="p-4">
-                    <h3 class="text-lg font-bold mb-2">${post.title}</h3>
-                    <div class="text-sm mb-3 opacity-70">
-                        @${post.author} • ${new Date(post.created_at).toLocaleDateString('pt-BR')}
-                    </div>
-                    <div class="mb-3 line-clamp-4 post-body">
+                <div class="text-preview-container absolute inset-0 flex flex-col justify-center items-center p-4">
+                    <div class="text-center post-body text-preview-content">
                         ${post.body_html}
                     </div>
-                    <div class="flex flex-wrap gap-2 mb-2">
-                        ${tagsHtml}
-                    </div>
-                    <div class="text-xs opacity-50">
-                        👁 ${post.views} views
+                    <div class="absolute bottom-4 left-4 right-4">
+                        <h3 class="text-center text-sm glowy-title mb-2">${post.title}</h3>
+                        <div class="flex flex-wrap gap-1 justify-center">
+                            ${tagsHtml}
+                        </div>
                     </div>
                 </div>
             `;

@@ -4,25 +4,6 @@
             --bg-color: #ffffff;
             --text-color: #000000;
             --accent: rgb(255, 238, 0);
-            --font-kerning: 0.01em;
-}
-
-#no-kern {
-    font-kerning: normal;
-    letter-spacing: var(--font-kerning);
-}
-
-.text-preview-content {
-    font-kerning: normal;
-    letter-spacing: var(--font-kerning);
-    tab-size: 4;
-    -webkit-font-smoothing: none !important;
-    font-smooth: never;
-    text-rendering: optimizeSpeed
-}
-
-pre, code {
-    tab-size: 4;
 }
 
 body {
@@ -51,7 +32,6 @@ body.dark {
 .post-card {
     border: 1px solid var(--text-color);
     transition: all 0.3s;
-    aspect-ratio: 1;
 }
 
 .post-card:hover {
@@ -99,6 +79,7 @@ body.dark {
 
 .teaser-image img {
     transition: transform 0.3s ease;
+    aspect-ratio: 1;
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -166,8 +147,7 @@ body.dark {
 /* Improved line clamp for text previews */
 .line-clamp-4 {
     display: -webkit-box;
-    line-clamp: 8;
-    -webkit-line-clamp: 8;
+    -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.4;
@@ -177,55 +157,6 @@ body.dark {
 /* Post body whitespace preservation */
 .post-body {
     white-space: pre-wrap;
-}
-
-/* Post content line spacing to match Sublime Text */
-.post-content {
-    line-height: 1.2 !important;
-    font-kerning: normal;
-    letter-spacing: var(--font-kerning);
-}
-
-.post-content p {
-    line-height: 1.2 !important;
-    margin-bottom: 0.5em !important;
-}
-
-.post-content pre {
-    line-height: 1.2 !important;
-    font-kerning: normal;
-    letter-spacing: var(--font-kerning);
-}
-
-/* Glowy title overlay */
-.glowy-title {
-    text-shadow: 
-        0 0 5px rgba(255, 238, 0, 0.8),
-        0 0 10px rgba(255, 238, 0, 0.6),
-        0 0 15px rgba(255, 238, 0, 0.4),
-        2px 2px 4px rgba(0, 0, 0, 0.8);
-    color: #ffffff;
-    font-weight: bold;
-}
-
-/* Overlay content positioning */
-.overlay-content {
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 50%);
-    backdrop-filter: blur(1px);
-}
-
-/* Text preview container */
-.text-preview-container {
-    background: var(--bg-color);
-    overflow: hidden;
-}
-
-.text-preview-content {
-    font-size: 0.8rem;
-    line-height: 1.1;
-    overflow: hidden;
-    max-height: 100%;
-    font-family: var(--font-family);
 }
 
 /* Loading states */
