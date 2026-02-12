@@ -56,7 +56,8 @@ body.dark {
 
 .post-card:hover {
     border-color: var(--accent);
-    box-shadow: 0 0 15px rgb(251, 255, 0)
+    box-shadow: 0 0 15px rgb(251, 255, 0);
+    z-index: 10;
 }
 
 .tag-pill {
@@ -218,6 +219,7 @@ body.dark {
 .text-preview-container {
     background: var(--bg-color);
     overflow: hidden;
+    
 }
 
 .text-preview-content {
@@ -226,6 +228,7 @@ body.dark {
     overflow: hidden;
     max-height: 100%;
     font-family: var(--font-family);
+    white-space: pre-wrap;
 }
 
 /* Loading states */

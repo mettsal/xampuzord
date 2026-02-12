@@ -245,6 +245,38 @@ def edit_post(post_id):
     
     return render_template('editor.html', post=post)
 
+@app.route('/post/<int:post_id>/delete', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    """Delete existing post"""
+    post = Post.query.get_or_404(post_id)
+
+    # Check ownership - only author or admin can delete
+    if post.author_id != current_user.id and not current_user.is_admin:
+        if request.is_json:
+            return jsonify({'error': 'Permission denied'}), 403
+        flash('You can only delete your own posts')
+        return redirect(url_for('view_post', post_id=post_id))
+
+    # Delete teaser image file if it exists
+    if post.teaser_image:
+        try:
+            teaser_path = os.path.join('static', post.teaser_image)
+            if os.path.exists(teaser_path):
+                os.remove(teaser_path)
+        except Exception:
+            pass  # Continue even if file deletion fails
+
+    # Delete post from database
+    db.session.delete(post)
+    db.session.commit()
+
+    if request.is_json:
+        return jsonify({'success': True})
+
+    flash('Post deleted successfully')
+    return redirect(url_for('index'))
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     """User registration"""

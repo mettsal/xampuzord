@@ -157,3 +157,27 @@ document.addEventListener('DOMContentLoaded', function() {
         return card;
     }
 });
+
+// Delete post function
+function deletePost(postId) {
+    if (confirm('Tem certeza que deseja deletar este post? Esta ação não pode ser desfeita.')) {
+        fetch(`/post/${postId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/';
+            } else {
+                alert('Erro ao deletar post: ' + (data.error || 'Erro desconhecido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao deletar post');
+        });
+    }
+}
