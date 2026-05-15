@@ -1,23 +1,27 @@
 # README.md
-# Cybernetic Poetry Blog
+# Xampu Para Ossos (Boneshampoo)
 
-A modern, minimalist blog platform for digital poetry with a cyberpunk aesthetic.
+Um blog minimalista de poesia digital com estética cyberpunk/K-punk. Interface tipo Instagram grid 3x3, temas customizados por post, editor Markdown, e sistema de teasers.
 
-## Features
+## Funcionalidades
 
-- **Instagram-style Grid Layout**: 3x3 post grid with infinite scroll
-- **Markdown Editor**: Medium-inspired editor with live preview
-- **Customizable Typography**: Multiple font options for posts
-- **Dark/Light Theme**: Toggle between black/white themes
-- **Tag System**: Organize posts by year and genre
-- **User Authentication**: Register, login, and manage your posts
-- **Admin Dashboard**: Monitor posts, users, and site statistics
-- **Quality of Life Features**:
-  - Auto-save drafts to localStorage
-  - Keyboard shortcuts (Ctrl+S to save, Ctrl+P to preview)
-  - Tag autocomplete
-  - Search by tags
-  - View counter for posts
+- **Grid Layout Instagram**: Grid 3x3 com infinite scroll
+- **Editor Markdown**: Editor com live preview e auto-save
+- **Temas Customizados por Post**: 9 temas disponíveis (inherit, dark, light, cyberpunk, matrix, vaporwave, noir, sunset, ocean)
+- **Tema Global**: Toggle Preto/Branco para navegação
+- **Sistema de Tags**: Organizar posts por ano e gênero
+- **Autenticação de Usuários**: Registro, login e gestão de posts
+- **Admin Dashboard**: Monitorar posts, usuários e estatísticas
+- **Teasers Customizáveis**: 3 modos (auto text, imagem upload, nenhum)
+- **Funcionalidades UX**:
+  - ✅ Auto-save drafts para localStorage
+  - ✅ Keyboard shortcuts (Ctrl+S salvar, Ctrl+P preview)
+  - ✅ Search/filter por tags em tempo real
+  - ✅ Click em tags para filtrar
+  - ✅ Contador de visualizações
+  - ✅ Upload de imagens teaser (drag & drop)
+  - ✅ Scroll horizontal para posts largos
+  - ✅ Auto-wrap em `<pre><code>`
 
 ## Tech Stack
 
@@ -27,140 +31,226 @@ A modern, minimalist blog platform for digital poetry with a cyberpunk aesthetic
 - **Authentication**: Flask-Login
 - **Security**: Bleach for HTML sanitization, Werkzeug for password hashing
 
-## Installation
+## Instalação
 
-1. Clone the repository:
+1. Clone o repositório:
 ```bash
-git clone https://github.com/yourusername/cyberpoetry-blog.git
-cd cyberpoetry-blog
+git clone https://github.com/yourusername/boneshampoo.git
+cd boneshampoo
 ```
 
-2. Create a virtual environment:
+2. Crie um ambiente virtual:
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Linux/Mac
 ```
 
-3. Install dependencies:
+3. Instale as dependências:
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Initialize the database:
+4. Inicialize o banco de dados:
 ```bash
 flask init-db
-flask seed-db  # Optional: add sample data
+flask seed-db  # Opcional: dados de exemplo (cria admin/admin123)
 ```
 
-5. Run the application:
+5. **IMPORTANTE - Migração**: Se estiver atualizando de versão antiga, rode:
+```bash
+python migrate_add_post_theme.py
+```
+
+6. Execute a aplicação:
 ```bash
 python run.py
 ```
 
-The app will be available at `http://localhost:5000`
+A aplicação estará disponível em `http://localhost:5000`
 
-## Project Structure
+## Comandos CLI Úteis
+
+### Gerenciamento de Usuários
+
+**Listar todos os usuários:**
+```bash
+flask list-users
+```
+Mostra ID, username, email, status admin e número de posts.
+
+**Resetar senha do admin:**
+```bash
+flask reset-admin-password
+```
+Encontra o primeiro admin e permite resetar a senha interativamente (senha não aparece ao digitar).
+
+**Tornar usuário admin:**
+```bash
+flask make-admin
+```
+Pergunta o username e promove para admin (requer confirmação).
+
+### Gerenciamento de Banco de Dados
+
+**Inicializar banco:**
+```bash
+flask init-db
+```
+
+**Popular com dados de exemplo:**
+```bash
+flask seed-db
+```
+Cria admin (admin/admin123) + 5 usuários + 20 posts de exemplo.
+
+## Estrutura do Projeto
 
 ```
-cyberpoetry_blog/
-├── app.py                 # Main Flask application
-├── config.py              # Configuration settings
-├── run.py                 # Entry point
-├── requirements.txt       # Python dependencies
-├── templates/            # Jinja2 templates
-│   ├── base.html         # Base template with navigation
-│   ├── index.html        # Homepage with post grid
-│   ├── post.html         # Single post view
-│   ├── editor.html       # Post editor
-│   ├── login.html        # Login page
-│   ├── register.html     # Registration page
-│   └── admin.html        # Admin dashboard
+boneshampoo/
+├── app.py                        # Aplicação Flask principal
+├── config.py                     # Configurações (não usado atualmente)
+├── run.py                        # Entry point
+├── requirements.txt              # Dependências Python
+├── migrate_add_post_theme.py    # Script de migração para post_theme
+├── CLAUDE.md                     # Guia para Claude Code
+├── templates/                    # Templates Jinja2
+│   ├── base.html                # Template base com navbar
+│   ├── index.html               # Homepage com grid 3x3
+│   ├── post.html                # Visualização de post individual
+│   ├── editor.html              # Editor de posts
+│   ├── login.html               # Página de login
+│   ├── register.html            # Página de registro
+│   ├── admin.html               # Dashboard admin
+│   ├── 404.html                 # Página de erro 404
+│   └── 500.html                 # Página de erro 500
 ├── static/
 │   ├── css/
-│   │   └── style.css     # Custom styles
+│   │   └── style.css            # Estilos customizados + temas
 │   ├── js/
-│   │   ├── main.js       # Main JavaScript
-│   │   └── editor.js     # Editor functionality
-│   └── uploads/          # User uploaded images
+│   │   ├── main.js              # JavaScript principal + search
+│   │   └── editor.js            # Funcionalidade do editor
+│   └── uploads/
+│       └── teasers/             # Imagens de teaser (user upload)
+├── instance/
+│   └── xampuparaossos.db        # SQLite database
 └── README.md
 ```
 
 ## API Endpoints
 
-- `GET /` - Homepage with initial posts
-- `GET /api/posts?page=<int>&tags=<json>` - Get posts for infinite scroll
-- `GET /post/<id>` - View single post
-- `POST /post/new` - Create new post (requires login)
-- `POST /post/<id>/edit` - Edit post (requires ownership)
-- `GET /api/tags` - Get all tags for autocomplete
-- `POST /api/user/settings` - Update user preferences
-- `GET /admin` - Admin dashboard (requires admin role)
+- `GET /` - Homepage com 9 posts iniciais
+- `GET /api/posts?page=<int>&tags=<json>` - Posts para infinite scroll
+- `GET /post/<id>` - Visualizar post individual (incrementa views)
+- `POST /post/new` - Criar novo post (requer autenticação)
+- `POST /post/<id>/edit` - Editar post (requer ownership ou admin)
+- `POST /post/<id>/delete` - Deletar post (requer ownership ou admin)
+- `POST /api/upload/teaser` - Upload de imagem teaser (max 16MB)
+- `GET /api/tags` - Todas as tags para autocomplete (top 50)
+- `POST /api/user/settings` - Atualizar preferências do usuário
+- `GET /admin` - Dashboard admin (requer is_admin=True)
+- `GET /login` - Página de login
+- `POST /login` - Autenticar usuário
+- `GET /register` - Página de registro
+- `POST /register` - Criar novo usuário
+- `GET /logout` - Logout do usuário
 
-## Deployment
+## Temas Disponíveis
+
+Posts podem ter temas individuais independentes do tema global:
+
+- **inherit** - Herda tema global (Preto/Branco)
+- **dark** - Fundo preto, texto branco
+- **light** - Fundo branco, texto preto
+- **cyberpunk** - Roxo escuro (#1a0033) + Ciano + Magenta glow
+- **matrix** - Verde matrix (#00ff00) no preto
+- **vaporwave** - Gradiente rosa/roxo/azul
+- **noir** - Cinza escuro estilo filme noir
+- **sunset** - Gradiente laranja/amarelo
+- **ocean** - Azul marinho (#001f3f) + Azul claro
+
+Selecione o tema no editor ao criar/editar post.
+
+## Funcionalidades Especiais
+
+### Sistema de Teasers
+- **Auto (padrão)**: Preview de texto truncado
+- **Imagem**: Upload de imagem com overlay de título
+- **Nenhum**: Apenas metadados (sem preview)
+
+### Search/Filter
+- Digite no search bar para filtrar por tags
+- Clique em qualquer tag para buscar automaticamente
+- ESC para limpar busca
+- Contador de resultados em tempo real
+
+### Editor
+- Auto-save a cada 1 segundo
+- Ctrl+S para salvar
+- Ctrl+P para toggle preview
+- Conteúdo automaticamente envolvido em `<pre><code>`
+- Upload drag-and-drop para teasers
+
+## Deployment (Planejado)
+
+⚠️ **Ainda não implementado**. Para deployment futuro:
 
 ### Heroku
-
-1. Create a new Heroku app:
 ```bash
 heroku create your-app-name
-```
-
-2. Set environment variables:
-```bash
-heroku config:set SECRET_KEY=your-secret-key-here
-```
-
-3. Deploy:
-```bash
+heroku config:set SECRET_KEY=your-secret-key
 git push heroku main
 ```
 
-### Vercel
+### Considerações
+- Trocar SQLite por PostgreSQL
+- Setar `SECRET_KEY` em produção
+- Habilitar HTTPS
+- Adicionar rate limiting
+- Implementar CAPTCHA no registro
 
-1. Install Vercel CLI:
-```bash
-npm i -g vercel
-```
+## Segurança
 
-2. Deploy:
-```bash
-vercel
-```
+### ✅ Implementado:
+- ✅ **Rate Limiting**: 10/min login, 5/hora registro, 20/hora posts
+- ✅ **Sanitização HTML** (Bleach) - previne XSS
+- ✅ **Password hashing** (Werkzeug PBKDF2)
+- ✅ **Ownership checks** em edit/delete
+- ✅ **Validação de uploads** (tipo, tamanho, extensão)
+- ✅ **Session cookies** seguras (Flask-Login)
+- ✅ **Variáveis de ambiente** para SECRET_KEY e DATABASE_URL
 
-## Development
+### ⚠️ Configurações Obrigatórias para Produção:
 
-### Adding a new feature
+**ANTES de hospedar, você DEVE:**
+1. Gerar SECRET_KEY forte: `python -c "import secrets; print(secrets.token_hex(32))"`
+2. Configurar HTTPS (Let's Encrypt/Certbot)
+3. Migrar para PostgreSQL (não usar SQLite)
+4. Setar `FLASK_DEBUG=False`
+5. Usar Gunicorn (não `flask run`)
 
-1. Create a new branch:
-```bash
-git checkout -b feature/your-feature-name
-```
+**Leia o guia completo**: [SECURITY.md](SECURITY.md)
 
-2. Make your changes
-3. Test thoroughly
-4. Submit a pull request
+### 📋 TODO Futuro:
+- CAPTCHA no registro (Google reCAPTCHA)
+- Headers de segurança (CSP, X-Frame-Options)
+- Compressão de imagens no upload
+- Logs centralizados
 
-### Running tests
+## Issues Conhecidos
 
-```bash
-python -m pytest tests/
-```
+1. Tag count não decrementa ao deletar post
+2. Search bar na navbar não persiste após navegação
+3. Infinite scroll não detecta fim dos posts (continua tentando)
+4. config.py existe mas não é usado (configurações hardcoded em app.py)
 
-## Security Considerations
+## Créditos
 
-- Change `SECRET_KEY` in production
-- Use PostgreSQL or MySQL in production instead of SQLite
-- Enable HTTPS in production
-- Regularly update dependencies
-- Implement rate limiting for API endpoints
-- Add CAPTCHA for registration
+- **Conceito**: Blog de poesia digital K-punk/cyberpunk
+- **Stack**: Flask + SQLAlchemy + Vanilla JS + Tailwind CSS
+- **Markdown**: marked.js (client-side)
+- **Desenvolvido com**: Claude Code (Anthropic)
 
-## License
+## Licença
 
-MIT License - feel free to use this project for your own cybernetic poetry!
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Credits
+MIT License - use livremente para sua própria poesia cibernética! 🧴✨

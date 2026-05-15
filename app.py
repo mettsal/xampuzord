@@ -2,6 +2,8 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import json
@@ -12,16 +14,30 @@ from werkzeug.utils import secure_filename
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'cyber-poetry-secret-key-change-in-production'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///xampuparaossos.db'
+
+# Load configuration from environment variables (production) or defaults (development)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'cyber-poetry-secret-key-change-in-production')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///xampuparaossos.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = 'static/uploads/teasers'
+
+# Fix for Heroku Postgres URL
+if app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgres://'):
+    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('postgres://', 'postgresql://')
 
 # Initialize extensions
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+# Initialize rate limiter
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 # ============= MODELS =============
 
@@ -53,6 +69,7 @@ class Post(db.Model):
     font = db.Column(db.String(50), default='Consolas')
     teaser_image = db.Column(db.String(200), nullable=True)  # Path to teaser image
     teaser_type = db.Column(db.String(20), default='auto')  # 'image', 'auto', or 'none'
+    post_theme = db.Column(db.String(50), default='inherit')  # Theme: inherit, dark, light, cyberpunk, matrix, etc.
     
     def to_dict(self):
         return {
@@ -65,7 +82,8 @@ class Post(db.Model):
             'views': self.views,
             'font': self.font,
             'teaser_image': self.teaser_image,
-            'teaser_type': self.teaser_type
+            'teaser_type': self.teaser_type,
+            'post_theme': self.post_theme
         }
 
 class Tag(db.Model):
@@ -81,7 +99,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 def sanitize_html(html_content):
-    """Sanitize HTML content to prevent XSS"""
+    """Sanitize HTML content to prevent XSS and auto-wrap in <pre><code>"""
     allowed_tags = [
         'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
         'blockquote', 'code', 'pre', 'ul', 'ol', 'li', 'a', 'img', 'span', 'div'
@@ -90,9 +108,21 @@ def sanitize_html(html_content):
         'a': ['href', 'title'],
         'img': ['src', 'alt', 'width', 'height'],
         'span': ['style'],
-        'div': ['style', 'class']
+        'div': ['style', 'class'],
+        'pre': ['class'],
+        'code': ['class']
     }
-    return bleach.clean(html_content, tags=allowed_tags, attributes=allowed_attrs)
+
+    # First clean the HTML
+    cleaned = bleach.clean(html_content, tags=allowed_tags, attributes=allowed_attrs)
+
+    # Auto-wrap entire content in <pre><code> if not already wrapped
+    # Check if content already starts with <pre> or <code>
+    stripped = cleaned.strip()
+    if not (stripped.startswith('<pre') or stripped.startswith('<code')):
+        cleaned = f'<pre><code>{cleaned}</code></pre>'
+
+    return cleaned
 
 def process_tags(tag_string):
     """Process comma-separated tags into JSON format"""
@@ -184,6 +214,7 @@ def view_post(post_id):
 
 @app.route('/post/new', methods=['GET', 'POST'])
 @login_required
+@limiter.limit("20 per hour")  # Prevent spam posting
 def new_post():
     """Create new post"""
     if request.method == 'POST':
@@ -195,7 +226,8 @@ def new_post():
         font = data.get('font', 'Consolas')
         teaser_image = data.get('teaser_image', None)
         teaser_type = data.get('teaser_type', 'auto')
-        
+        post_theme = data.get('post_theme', 'inherit')
+
         post = Post(
             title=title,
             body_html=body_html,
@@ -203,6 +235,7 @@ def new_post():
             font=font,
             teaser_image=teaser_image,
             teaser_type=teaser_type,
+            post_theme=post_theme,
             author_id=current_user.id
         )
         
@@ -235,6 +268,7 @@ def edit_post(post_id):
         post.font = data.get('font', post.font)
         post.teaser_image = data.get('teaser_image', post.teaser_image)
         post.teaser_type = data.get('teaser_type', post.teaser_type)
+        post.post_theme = data.get('post_theme', post.post_theme)
         post.updated_at = datetime.utcnow()
         
         db.session.commit()
@@ -278,6 +312,7 @@ def delete_post(post_id):
     return redirect(url_for('index'))
 
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("5 per hour")  # Prevent mass account creation
 def register():
     """User registration"""
     if request.method == 'POST':
@@ -316,6 +351,7 @@ def register():
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")  # Prevent brute force attacks
 def login():
     """User login"""
     if request.method == 'POST':
@@ -380,6 +416,7 @@ def user_settings():
 
 @app.route('/api/upload/teaser', methods=['POST'])
 @login_required
+@limiter.limit("10 per minute")  # Prevent upload spam
 def upload_teaser():
     """Upload teaser image for posts"""
     if 'file' not in request.files:
@@ -407,6 +444,11 @@ def upload_teaser():
 
 # ============= ERROR HANDLERS =============
 
+@app.route('/sobre')
+def sobre():
+    """About page"""
+    return render_template('sobre.html')
+
 @app.errorhandler(404)
 def not_found(e):
     return render_template('404.html'), 404
@@ -430,19 +472,19 @@ def seed_db():
     admin = User(username='admin', email='admin@xampuparaossos.com', is_admin=True)
     admin.set_password('admin123')
     db.session.add(admin)
-    
+
     # Create sample users
     for i in range(5):
         user = User(username=f'poet_{i}', email=f'poet{i}@example.com')
         user.set_password('password123')
         db.session.add(user)
-    
+
     db.session.commit()
-    
+
     # Create sample posts
     users = User.query.all()
     genres = ['cybernetic', 'digital', 'glitch', 'neural', 'quantum']
-    
+
     for i in range(20):
         post = Post(
             title=f'Digital Dreams #{i+1}',
@@ -458,9 +500,105 @@ def seed_db():
             views=i * 10
         )
         db.session.add(post)
-    
+
     db.session.commit()
     print("Database seeded with sample data!")
+
+@app.cli.command()
+def reset_admin_password():
+    """Reset admin password interactively"""
+    import getpass
+
+    # Find admin user
+    admin = User.query.filter_by(is_admin=True).first()
+
+    if not admin:
+        print("❌ No admin user found in database!")
+        print("ℹ️  Run 'flask seed-db' to create one, or manually set is_admin=True for a user.")
+        return
+
+    print(f"✅ Found admin user: {admin.username} ({admin.email})")
+    print()
+
+    # Ask for new password
+    while True:
+        new_password = getpass.getpass("Enter new password: ")
+        confirm_password = getpass.getpass("Confirm new password: ")
+
+        if new_password != confirm_password:
+            print("❌ Passwords don't match. Try again.\n")
+            continue
+
+        if len(new_password) < 4:
+            print("❌ Password too short (min 4 chars). Try again.\n")
+            continue
+
+        break
+
+    # Update password
+    admin.set_password(new_password)
+    db.session.commit()
+
+    print()
+    print("✅ Admin password reset successfully!")
+    print(f"   Username: {admin.username}")
+    print(f"   New password: {'*' * len(new_password)}")
+
+@app.cli.command()
+def list_users():
+    """List all users in the database"""
+    users = User.query.all()
+
+    if not users:
+        print("❌ No users found in database!")
+        return
+
+    print(f"\n📋 Total users: {len(users)}\n")
+    print(f"{'ID':<5} {'Username':<20} {'Email':<30} {'Admin':<8} {'Posts':<8}")
+    print("-" * 75)
+
+    for user in users:
+        admin_status = "✅ Yes" if user.is_admin else "No"
+        post_count = len(user.posts)
+        print(f"{user.id:<5} {user.username:<20} {user.email:<30} {admin_status:<8} {post_count:<8}")
+    print()
+
+@app.cli.command()
+def make_admin():
+    """Make a user admin by username"""
+    import sys
+
+    username = input("Enter username to make admin: ").strip()
+
+    if not username:
+        print("❌ Username cannot be empty!")
+        return
+
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        print(f"❌ User '{username}' not found!")
+        print("\nℹ️  Available users:")
+        users = User.query.all()
+        for u in users:
+            print(f"   - {u.username}")
+        return
+
+    if user.is_admin:
+        print(f"ℹ️  User '{username}' is already an admin!")
+        return
+
+    # Confirm
+    confirm = input(f"Make '{username}' an admin? (yes/no): ").strip().lower()
+
+    if confirm not in ['yes', 'y']:
+        print("❌ Cancelled.")
+        return
+
+    user.is_admin = True
+    db.session.commit()
+
+    print(f"✅ User '{username}' is now an admin!")
 
 if __name__ == '__main__':
     with app.app_context():

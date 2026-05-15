@@ -25,10 +25,22 @@
                         <option value="Monaco" {% if post and post.font == 'Monaco' %}selected{% endif %}>Monaco</option>
                         <option value="Fira Code" {% if post and post.font == 'Fira Code' %}selected{% endif %}>Fira Code</option>
                     </select>
-                    
-                    <input type="text" name="tags" id="tagInput" 
+
+                    <select name="post_theme" id="themeSelector" class="px-2 py-1 bg-transparent border border-current">
+                        <option value="inherit" {% if post and post.post_theme == 'inherit' %}selected{% endif %}>🎨 Tema: Herdar</option>
+                        <option value="dark" {% if post and post.post_theme == 'dark' %}selected{% endif %}>⚫ Preto</option>
+                        <option value="light" {% if post and post.post_theme == 'light' %}selected{% endif %}>⚪ Branco</option>
+                        <option value="cyberpunk" {% if post and post.post_theme == 'cyberpunk' %}selected{% endif %}>💜 Cyberpunk</option>
+                        <option value="matrix" {% if post and post.post_theme == 'matrix' %}selected{% endif %}>💚 Matrix</option>
+                        <option value="vaporwave" {% if post and post.post_theme == 'vaporwave' %}selected{% endif %}>🌸 Vaporwave</option>
+                        <option value="noir" {% if post and post.post_theme == 'noir' %}selected{% endif %}>🎬 Noir</option>
+                        <option value="sunset" {% if post and post.post_theme == 'sunset' %}selected{% endif %}>🌅 Sunset</option>
+                        <option value="ocean" {% if post and post.post_theme == 'ocean' %}selected{% endif %}>🌊 Ocean</option>
+                    </select>
+
+                    <input type="text" name="tags" id="tagInput"
                            value="{% if post %}{{ post.tags|map(attribute='value')|join(', ') }}{% endif %}"
-                           placeholder="Tags (comma-separated)" 
+                           placeholder="Tags (comma-separated)"
                            class="flex-1 px-2 py-1 bg-transparent border border-current">
                 </div>
                 

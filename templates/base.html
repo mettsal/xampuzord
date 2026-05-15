@@ -16,10 +16,13 @@
                 <div class="logo-placeholder">🧴</div>
                 XAMPU PARA OSSOS</a>
             <div class="flex items-center gap-4">
-                <a href="#" class="px-3 py-1 border border-current hover:bg-current hover:text-inverse">SOBRE</a>
+                <a href="{{ url_for('sobre') }}" class="px-3 py-1 border border-current hover:bg-current hover:text-inverse">SOBRE</a>
                 <a href="#" class="px-3 py-1 border border-current hover:bg-current hover:text-inverse">CATEGORIAS</a>
-                <input type="text" id="searchBar" placeholder="Search tags..." 
-                       class="px-3 py-1 bg-transparent border border-current">
+                <div class="relative">
+                    <input type="text" id="searchBar" placeholder="🔍 Buscar tags..."
+                           class="px-3 py-1 bg-transparent border border-current">
+                    <span id="searchCount" class="hidden absolute -bottom-5 left-0 text-xs opacity-70"></span>
+                </div>
                 <button id="themeToggle" class="px-3 py-1 border border-current hover:bg-current hover:text-inverse">
                     ⚡ Tema
                 </button>

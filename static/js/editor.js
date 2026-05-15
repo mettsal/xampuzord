@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const postTitle = document.getElementById('postTitle');
     const tagInput = document.getElementById('tagInput');
     const fontSelector = document.getElementById('fontSelector');
+    const themeSelector = document.getElementById('themeSelector');
     const togglePreview = document.getElementById('togglePreview');
     const previewPanel = document.getElementById('previewPanel');
     const previewContent = document.getElementById('previewContent');
@@ -176,6 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: postBody.value,
                     tags: tagInput.value,
                     font: fontSelector.value,
+                    post_theme: themeSelector ? themeSelector.value : 'inherit',
                     teaser_type: teaserType ? teaserType.value : 'auto',
                     teaser_image: teaserImagePath ? teaserImagePath.value : ''
                 };
@@ -199,6 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (postBody) postBody.value = draftData.body || '';
             if (tagInput) tagInput.value = draftData.tags || '';
             if (fontSelector) fontSelector.value = draftData.font || 'Consolas';
+            if (themeSelector) themeSelector.value = draftData.post_theme || 'inherit';
             if (teaserType) teaserType.value = draftData.teaser_type || 'auto';
             if (teaserImagePath) teaserImagePath.value = draftData.teaser_image || '';
         } catch (e) {
@@ -221,6 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 body_html: bodyHtml,
                 tags: formData.get('tags'),
                 font: formData.get('font'),
+                post_theme: formData.get('post_theme') || 'inherit',
                 teaser_type: formData.get('teaser_type') || 'auto',
                 teaser_image: formData.get('teaser_image') || ''
             };

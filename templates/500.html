@@ -1,0 +1,27 @@
+<!-- templates/500.html -->
+{% extends "base.html" %}
+
+{% block title %}Erro 500 - Xampu Para Ossos{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto text-center py-16">
+    <div class="text-8xl mb-8 cyber-glow">500</div>
+    <h1 class="text-3xl font-bold mb-4">Erro Interno do Servidor</h1>
+    <p class="text-lg mb-8 opacity-70">
+        Algo deu errado no lado do servidor. Os ossos estão muito ensaboados.
+    </p>
+    <div class="mb-8 p-6 border border-current bg-opacity-5 bg-current">
+        <p class="text-sm opacity-80">
+            Se o problema persistir, entre em contato com o administrador.
+        </p>
+    </div>
+    <div class="flex gap-4 justify-center">
+        <a href="{{ url_for('index') }}" class="px-6 py-3 border border-current hover:bg-current hover:text-inverse transition-all">
+            ← Voltar ao Início
+        </a>
+        <a href="javascript:history.back()" class="px-6 py-3 border border-current hover:bg-current hover:text-inverse transition-all">
+            ← Voltar
+        </a>
+    </div>
+</div>
+{% endblock %}

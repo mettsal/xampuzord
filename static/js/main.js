@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Enhanced B/W Theme Management
     const themeToggle = document.getElementById('themeToggle');
     const body = document.body;
+    const searchBar = document.getElementById('searchBar');
     
     // Load saved theme
     const savedTheme = localStorage.getItem('theme') || 'light';
@@ -38,11 +39,73 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Search functionality
+    if (searchBar) {
+        let searchTimeout;
+        searchBar.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchQuery = e.target.value.trim().toLowerCase();
+                filterPostsBySearch(searchQuery);
+            }, 300); // Debounce 300ms
+        });
+
+        // Clear search on Escape
+        searchBar.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                searchBar.value = '';
+                filterPostsBySearch('');
+            }
+        });
+    }
+
+    // Click on tags to search
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('tag-pill') && searchBar) {
+            e.stopPropagation(); // Prevent post navigation
+            const tagText = e.target.textContent.trim();
+            searchBar.value = tagText;
+            filterPostsBySearch(tagText.toLowerCase());
+            searchBar.focus();
+        }
+    });
+
+    function filterPostsBySearch(query) {
+        const postCards = document.querySelectorAll('.post-card');
+        const searchCount = document.getElementById('searchCount');
+
+        if (!query) {
+            // Show all posts
+            postCards.forEach(card => card.style.display = '');
+            if (searchCount) searchCount.classList.add('hidden');
+            return;
+        }
+
+        let visibleCount = 0;
+        postCards.forEach(card => {
+            // Get all tag elements in this card
+            const tags = card.querySelectorAll('.tag-pill');
+            const tagValues = Array.from(tags).map(tag => tag.textContent.toLowerCase());
+
+            // Check if any tag matches the search query
+            const matches = tagValues.some(tag => tag.includes(query));
+
+            card.style.display = matches ? '' : 'none';
+            if (matches) visibleCount++;
+        });
+
+        // Show count feedback
+        if (searchCount) {
+            searchCount.textContent = `${visibleCount} post${visibleCount !== 1 ? 's' : ''} encontrado${visibleCount !== 1 ? 's' : ''}`;
+            searchCount.classList.remove('hidden');
+        }
+    }
+
     // Infinite Scroll and other functionality
     const postGrid = document.getElementById('postGrid');
     const scrollSentinel = document.getElementById('scrollSentinel');
     const loadingIndicator = document.getElementById('loadingIndicator');
-    
+
     if (postGrid && scrollSentinel) {
         let currentPage = 2;
         let isLoading = false;
@@ -91,7 +154,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create post card element with teaser support
     function createPostCard(post) {
         const card = document.createElement('div');
-        card.className = 'post-card p-0 hover:scale-105 transition-transform cursor-pointer relative';
+        const themeClass = post.post_theme ? `post-theme-${post.post_theme}` : 'post-theme-inherit';
+        card.className = `post-card p-0 hover:scale-105 transition-transform cursor-pointer relative ${themeClass}`;
         
         const tagsHtml = post.tags.map(tag => `
             <span class="tag-pill px-2 py-1 text-xs border border-current">
@@ -134,13 +198,13 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // Auto text preview (default)
             cardContent = `
-                <div class="text-preview-container absolute inset-0 flex flex-col justify-center items-center p-4">
-                    <div class="text-center post-body text-preview-content">
+                <div class="text-preview-container absolute inset-0 flex flex-col justify-start items-start">
+                    <div class="post-body text-preview-content">
                         ${post.body_html}
                     </div>
                     <div class="absolute bottom-4 left-4 right-4">
-                        <h3 class="text-center text-sm glowy-title mb-2">${post.title}</h3>
-                        <div class="flex flex-wrap gap-1 justify-center">
+                        <h3 class="text-left text-sm glowy-title mb-2">${post.title}</h3>
+                        <div class="flex flex-wrap gap-1">
                             ${tagsHtml}
                         </div>
                     </div>

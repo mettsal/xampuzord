@@ -64,6 +64,16 @@ body.dark {
     background: linear-gradient(45deg, transparent, var(--accent), transparent);
     background-size: 200% 200%;
     animation: shimmer 3s ease infinite;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.tag-pill:hover {
+    transform: scale(1.1);
+    background: var(--accent);
+    color: var(--bg-color);
+    z-index: 10;
 }
 
 .tag-pill::before {
@@ -178,6 +188,9 @@ body.dark {
 /* Post body whitespace preservation */
 .post-body {
     white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
 }
 
 /* Post content line spacing to match Sublime Text */
@@ -185,6 +198,9 @@ body.dark {
     line-height: 1.2 !important;
     font-kerning: normal;
     letter-spacing: var(--font-kerning);
+    overflow-x: auto;
+    overflow-y: visible;
+    max-width: 100%;
 }
 
 .post-content p {
@@ -196,6 +212,16 @@ body.dark {
     line-height: 1.2 !important;
     font-kerning: normal;
     letter-spacing: var(--font-kerning);
+    white-space: pre;
+    overflow-x: auto;
+    max-width: 100%;
+    padding: 1rem;
+    margin: 0;
+}
+
+.post-content code {
+    white-space: pre;
+    display: block;
 }
 
 /* Glowy title overlay */
@@ -219,7 +245,7 @@ body.dark {
 .text-preview-container {
     background: var(--bg-color);
     overflow: hidden;
-    
+    padding: 1rem;
 }
 
 .text-preview-content {
@@ -229,6 +255,17 @@ body.dark {
     max-height: 100%;
     font-family: var(--font-family);
     white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
+    text-align: left;
+}
+
+.text-preview-content pre,
+.text-preview-content code {
+    white-space: pre-wrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Loading states */
@@ -252,4 +289,171 @@ body.dark {
 /* Hidden class utility */
 .hidden {
     display: none !important;
+}
+
+/* Search functionality */
+#searchBar {
+    transition: all 0.3s ease;
+    min-width: 200px;
+}
+
+#searchBar:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+    outline: none;
+}
+
+#searchCount {
+    white-space: nowrap;
+}
+
+.post-card {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.post-card[style*="display: none"] {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+
+/* ===== POST THEME SYSTEM ===== */
+
+/* Theme wrappers isolate post styling from global theme */
+.post-theme-wrapper {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border-radius: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+
+/* Inherit: usa tema global */
+.post-theme-inherit {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+/* Dark theme */
+.post-theme-dark {
+    --post-bg: #000000;
+    --post-text: #ffffff;
+    --post-accent: rgb(255, 238, 0);
+    background-color: var(--post-bg);
+    color: var(--post-text);
+}
+
+/* Light theme */
+.post-theme-light {
+    --post-bg: #ffffff;
+    --post-text: #000000;
+    --post-accent: rgb(255, 238, 0);
+    background-color: var(--post-bg);
+    color: var(--post-text);
+}
+
+/* Cyberpunk theme */
+.post-theme-cyberpunk {
+    --post-bg: #1a0033;
+    --post-text: #00ffff;
+    --post-accent: #ff00ff;
+    background-color: var(--post-bg);
+    color: var(--post-text);
+}
+
+.post-theme-cyberpunk .cyber-glow,
+.post-theme-cyberpunk .glowy-title {
+    text-shadow: 0 0 10px var(--post-accent),
+                 0 0 20px var(--post-accent),
+                 0 0 30px var(--post-accent);
+}
+
+.post-theme-cyberpunk .post-card,
+.post-theme-cyberpunk .tag-pill {
+    border-color: var(--post-text);
+}
+
+/* Matrix theme */
+.post-theme-matrix {
+    --post-bg: #000000;
+    --post-text: #00ff00;
+    --post-accent: #00ff00;
+    background-color: var(--post-bg);
+    color: var(--post-text);
+    font-family: 'Courier New', monospace;
+}
+
+.post-theme-matrix .cyber-glow,
+.post-theme-matrix .glowy-title {
+    text-shadow: 0 0 5px var(--post-accent),
+                 0 0 10px var(--post-accent);
+}
+
+/* Vaporwave theme */
+.post-theme-vaporwave {
+    --post-bg: linear-gradient(135deg, #ff6ec7 0%, #7b68ee 50%, #00d4ff 100%);
+    --post-text: #ffffff;
+    --post-accent: #ff6ec7;
+    background: var(--post-bg);
+    color: var(--post-text);
+}
+
+.post-theme-vaporwave .glowy-title {
+    text-shadow: 0 0 10px rgba(255, 110, 199, 0.8),
+                 2px 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+/* Noir theme */
+.post-theme-noir {
+    --post-bg: #1a1a1a;
+    --post-text: #e0e0e0;
+    --post-accent: #888888;
+    background-color: var(--post-bg);
+    color: var(--post-text);
+}
+
+.post-theme-noir .cyber-glow,
+.post-theme-noir .glowy-title {
+    text-shadow: 0 0 5px rgba(224, 224, 224, 0.5);
+}
+
+/* Sunset theme */
+.post-theme-sunset {
+    --post-bg: linear-gradient(135deg, #ff4e50 0%, #f9d423 100%);
+    --post-text: #ffffff;
+    --post-accent: #ff4e50;
+    background: var(--post-bg);
+    color: var(--post-text);
+}
+
+.post-theme-sunset .glowy-title {
+    text-shadow: 0 0 10px rgba(255, 78, 80, 0.9),
+                 2px 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+/* Ocean theme */
+.post-theme-ocean {
+    --post-bg: #001f3f;
+    --post-text: #7fdbff;
+    --post-accent: #39cccc;
+    background-color: var(--post-bg);
+    color: var(--post-text);
+}
+
+.post-theme-ocean .cyber-glow,
+.post-theme-ocean .glowy-title {
+    text-shadow: 0 0 10px var(--post-accent),
+                 0 0 15px var(--post-accent);
+}
+
+/* Theme-specific border colors */
+.post-theme-cyberpunk .post-card:hover,
+.post-theme-matrix .post-card:hover,
+.post-theme-vaporwave .post-card:hover,
+.post-theme-noir .post-card:hover,
+.post-theme-sunset .post-card:hover,
+.post-theme-ocean .post-card:hover {
+    border-color: var(--post-accent);
+    box-shadow: 0 0 15px var(--post-accent);
 }
