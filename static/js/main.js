@@ -1,4 +1,11 @@
 // static/js/main-enhanced.js
+
+// Read the CSRF token rendered into the page <meta> for state-changing fetches.
+function getCsrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') : '';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Enhanced B/W Theme Management
     const themeToggle = document.getElementById('themeToggle');
@@ -32,7 +39,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (window.currentUser) {
                 fetch('/api/user/settings', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
                     body: JSON.stringify({theme: theme, font: localStorage.getItem('font') || 'Consolas'})
                 });
             }
@@ -107,15 +117,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadingIndicator = document.getElementById('loadingIndicator');
 
     if (postGrid && scrollSentinel) {
+        const PAGE_SIZE = 9; // must match app.py per_page
         let currentPage = 2;
         let isLoading = false;
+        let hasMore = true;
         let searchTags = [];
-        
+
         const loadMorePosts = async () => {
-            if (isLoading) return;
+            if (isLoading || !hasMore) return;
             isLoading = true;
             if (loadingIndicator) loadingIndicator.classList.remove('hidden');
-            
+
             try {
                 const params = new URLSearchParams({
                     page: currentPage,
@@ -123,13 +135,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 const response = await fetch(`/api/posts?${params}`);
                 const posts = await response.json();
-                
-                if (posts.length > 0) {
-                    posts.forEach(post => {
-                        const postCard = createPostCard(post);
-                        postGrid.appendChild(postCard);
-                    });
-                    currentPage++;
+
+                posts.forEach(post => {
+                    const postCard = createPostCard(post);
+                    postGrid.appendChild(postCard);
+                });
+
+                if (posts.length > 0) currentPage++;
+
+                // A short (or empty) page means we've reached the end: stop observing
+                // so the sentinel doesn't keep refetching the same empty page forever.
+                if (posts.length < PAGE_SIZE) {
+                    hasMore = false;
+                    observer.unobserve(scrollSentinel);
+                    if (loadingIndicator) loadingIndicator.classList.add('hidden');
                 }
             } catch (error) {
                 console.error('Error loading posts:', error);
@@ -138,16 +157,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (loadingIndicator) loadingIndicator.classList.add('hidden');
             }
         };
-        
+
         const observer = new IntersectionObserver(
             entries => {
-                if (entries[0].isIntersecting && !isLoading) {
+                if (entries[0].isIntersecting && !isLoading && hasMore) {
                     loadMorePosts();
                 }
             },
             { threshold: 0.1 }
         );
-        
+
         observer.observe(scrollSentinel);
     }
     
@@ -229,6 +248,7 @@ function deletePost(postId) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
             }
         })
         .then(response => response.json())

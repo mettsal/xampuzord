@@ -1,5 +1,11 @@
 // static/js/editor-enhanced.js
 document.addEventListener('DOMContentLoaded', function() {
+    // Read the CSRF token rendered into the page <meta> for state-changing fetches.
+    const csrfToken = () => {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : '';
+    };
+
     const postBody = document.getElementById('postBody');
     const postTitle = document.getElementById('postTitle');
     const tagInput = document.getElementById('tagInput');
@@ -99,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const response = await fetch('/api/upload/teaser', {
                 method: 'POST',
+                headers: {'X-CSRFToken': csrfToken()},
                 body: formData
             });
             
@@ -234,6 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken()
                     },
                     body: JSON.stringify(payload)
                 });

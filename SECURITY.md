@@ -196,16 +196,41 @@ Configure alertas para:
 - Uploads muito grandes
 - Erros 500 frequentes
 
+## 🔒 Hardening aplicado (revisão de segurança)
+
+Correções já no código (ver `app.py`, `config.py`, `run.py`, `static/js/`):
+
+- **config.py agora é carregado** via `FLASK_ENV` (`app.config.from_object`). É o
+  que ativa `SESSION_COOKIE_SECURE/HTTPONLY/SAMESITE` e `DEBUG=False` em produção.
+  **Rode em produção com `FLASK_ENV=production`.**
+- **SECRET_KEY fail-closed**: com `FLASK_ENV=production`, o app se recusa a subir
+  se a chave for o placeholder. Gere uma forte e coloque no `.env`.
+- **Debug desligado**: `debug` vem de `FLASK_DEBUG` (default `False`); nunca mais
+  `debug=True` fixo exposto na rede.
+- **CSRF (Flask-WTF)**: `CSRFProtect` protege todos os POST. Forms carregam
+  `csrf_token`; o fetch/AJAX envia o header `X-CSRFToken` (lido da `<meta>`).
+- **XSS**: allowlist do bleach sem `style` inline; protocolos de URL restritos a
+  `http/https/mailto`; tags não permitidas são removidas.
+- **Upload**: além da extensão, valida os bytes com Pillow (`Image.verify()`) —
+  arquivo que não é imagem de verdade é rejeitado.
+- **Erros**: upload não vaza `str(e)`; `except` amplos foram estreitados.
+- **Registro**: valida usuário/e-mail/senha (mín. 8), trata `IntegrityError`.
+
+## ⚙️ Notas operacionais pendentes
+
+- **Rate limiter em memória**: `storage_uri="memory://"` é **por-worker**. Sob
+  `gunicorn -w 4` os limites ficam ~4x maiores e zeram a cada restart. Em
+  produção séria, aponte o Flask-Limiter para **Redis**.
+- **Credenciais seed**: `flask seed-db` cria `admin/admin123` e `poet_*/password123`.
+  **Troque/rotacione imediatamente** após o primeiro deploy (`flask reset-admin-password`).
+
 ## 🚨 Vulnerabilidades Conhecidas
 
 ### Médio Risco:
-1. **config.py não usado**: Configurações hardcoded em app.py (use variáveis de ambiente)
-2. **Tag count não decrementa**: Bug ao deletar posts (não é segurança crítica)
-3. **Sem CAPTCHA**: Registro vulnerável a bots (implementar Google reCAPTCHA)
+1. **Sem CAPTCHA**: Registro vulnerável a bots (implementar Google reCAPTCHA)
 
 ### Baixo Risco:
-1. **Infinite scroll não para**: UX issue, não segurança
-2. **Search não persiste**: UX issue, não segurança
+1. **Search não persiste**: UX issue, não segurança
 
 ## 🔍 Auditoria de Segurança
 

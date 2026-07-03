@@ -5,31 +5,49 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+from flask_wtf.csrf import CSRFProtect
+from sqlalchemy.exc import IntegrityError
+from PIL import Image
 from datetime import datetime
 import json
 import bleach
 import os
+import re
 import uuid
-from werkzeug.utils import secure_filename
 
 # Initialize Flask app
 app = Flask(__name__)
 
-# Load configuration from environment variables (production) or defaults (development)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'cyber-poetry-secret-key-change-in-production')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///xampuparaossos.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+# Load configuration from config.py. FLASK_ENV selects dev/production/testing,
+# so the cookie/debug hardening in ProductionConfig actually takes effect.
+from config import config
+config_name = os.environ.get('FLASK_ENV', 'development')
+app.config.from_object(config.get(config_name, config['default']))
+
+# Keep the teaser upload path consistent with the path save_teaser_image() returns.
 app.config['UPLOAD_FOLDER'] = 'static/uploads/teasers'
 
-# Fix for Heroku Postgres URL
-if app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgres://'):
+# Fail closed: never run production signed with a publicly-known SECRET_KEY.
+_WEAK_SECRET_KEYS = {
+    'cyber-poetry-secret-key-change-in-production',
+    'cyber-poetry-dev-key-change-in-production',
+}
+if config_name == 'production' and app.config.get('SECRET_KEY') in _WEAK_SECRET_KEYS:
+    raise RuntimeError(
+        'SECRET_KEY inseguro em produção. Defina a variável de ambiente SECRET_KEY '
+        'com uma chave forte: python -c "import secrets; print(secrets.token_hex(32))"'
+    )
+
+# Fix for Heroku-style Postgres URL
+if app.config.get('SQLALCHEMY_DATABASE_URI', '').startswith('postgres://'):
     app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('postgres://', 'postgresql://')
 
 # Initialize extensions
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+csrf = CSRFProtect(app)
 
 # Initialize rate limiter
 limiter = Limiter(
@@ -104,17 +122,25 @@ def sanitize_html(html_content):
         'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
         'blockquote', 'code', 'pre', 'ul', 'ol', 'li', 'a', 'img', 'span', 'div'
     ]
+    # No 'style' attribute: bleach 6 does not sanitize inline CSS without a
+    # css_sanitizer, so allowing it enables CSS-injection / UI-redress attacks.
     allowed_attrs = {
         'a': ['href', 'title'],
         'img': ['src', 'alt', 'width', 'height'],
-        'span': ['style'],
-        'div': ['style', 'class'],
+        'div': ['class'],
         'pre': ['class'],
         'code': ['class']
     }
 
-    # First clean the HTML
-    cleaned = bleach.clean(html_content, tags=allowed_tags, attributes=allowed_attrs)
+    # Clean against the allowlist; restrict URL protocols so javascript:/data:
+    # cannot ride in on href/src; drop disallowed tags entirely.
+    cleaned = bleach.clean(
+        html_content,
+        tags=allowed_tags,
+        attributes=allowed_attrs,
+        protocols=['http', 'https', 'mailto'],
+        strip=True,
+    )
 
     # Auto-wrap entire content in <pre><code> if not already wrapped
     # Check if content already starts with <pre> or <code>
@@ -143,6 +169,22 @@ def process_tags(tag_string):
                 tag_obj.count += 1
     return tags
 
+def decrement_tags(tags_list):
+    """Decrement global Tag counts for a list of [{'type','value'}] dicts.
+
+    Called when a post's tags are removed (delete) or replaced (edit) so the
+    aggregate Tag.count stays accurate. Rows that reach zero are removed.
+    """
+    for tag in tags_list or []:
+        name = tag.get('value') if isinstance(tag, dict) else None
+        if not name:
+            continue
+        tag_obj = Tag.query.filter_by(name=name).first()
+        if tag_obj:
+            tag_obj.count = max(0, tag_obj.count - 1)
+            if tag_obj.count == 0:
+                db.session.delete(tag_obj)
+
 def allowed_file(filename):
     """Check if the uploaded file is allowed"""
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -151,20 +193,30 @@ def allowed_file(filename):
 
 def save_teaser_image(file):
     """Save uploaded teaser image and return the filename"""
-    if file and allowed_file(file.filename):
-        # Generate unique filename
-        filename = secure_filename(file.filename)
-        unique_filename = f"{uuid.uuid4().hex}_{filename}"
-        
-        # Ensure upload directory exists
-        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-        
-        # Save file
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-        file.save(file_path)
-        
-        return f"uploads/teasers/{unique_filename}"
-    return None
+    if not (file and allowed_file(file.filename)):
+        return None
+
+    # Extension check is not enough: verify the bytes are really an image so a
+    # renamed HTML/script polyglot cannot be stored and served.
+    try:
+        file.stream.seek(0)
+        Image.open(file.stream).verify()
+        file.stream.seek(0)
+    except Exception:
+        return None
+
+    # Generate unique filename
+    filename = secure_filename(file.filename)
+    unique_filename = f"{uuid.uuid4().hex}_{filename}"
+
+    # Ensure upload directory exists
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+    # Save file
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+    file.save(file_path)
+
+    return f"uploads/teasers/{unique_filename}"
 
 # ============= ROUTES =============
 
@@ -182,7 +234,7 @@ def api_posts():
     
     try:
         tags_filter = json.loads(tags_filter)
-    except:
+    except (json.JSONDecodeError, TypeError):
         tags_filter = []
     
     query = Post.query
@@ -264,6 +316,8 @@ def edit_post(post_id):
         
         post.title = data.get('title', post.title)
         post.body_html = sanitize_html(data.get('body_html', post.body_html))
+        # Release the old tags' counts before re-processing so edits don't inflate them
+        decrement_tags(post.tags)
         post.tags = process_tags(data.get('tags', ''))
         post.font = data.get('font', post.font)
         post.teaser_image = data.get('teaser_image', post.teaser_image)
@@ -301,7 +355,8 @@ def delete_post(post_id):
         except Exception:
             pass  # Continue even if file deletion fails
 
-    # Delete post from database
+    # Keep aggregate Tag.count accurate and delete the post
+    decrement_tags(post.tags)
     db.session.delete(post)
     db.session.commit()
 
@@ -317,37 +372,49 @@ def register():
     """User registration"""
     if request.method == 'POST':
         data = request.get_json() if request.is_json else request.form
-        
-        username = data.get('username')
-        email = data.get('email')
-        password = data.get('password')
-        
+
+        username = (data.get('username') or '').strip()
+        email = (data.get('email') or '').strip()
+        password = data.get('password') or ''
+
+        def reg_error(msg, code=400):
+            if request.is_json:
+                return jsonify({'error': msg}), code
+            flash(msg)
+            return redirect(url_for('register'))
+
+        # Server-side validation (client 'required' is not enough)
+        if not username or not email or not password:
+            return reg_error('Preencha usuário, e-mail e senha')
+        if len(password) < 8:
+            return reg_error('A senha precisa ter ao menos 8 caracteres')
+        if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
+            return reg_error('E-mail inválido')
+
         # Check if user exists
         if User.query.filter_by(username=username).first():
-            if request.is_json:
-                return jsonify({'error': 'Username already exists'}), 400
-            flash('Username already exists')
-            return redirect(url_for('register'))
-        
+            return reg_error('Username already exists')
         if User.query.filter_by(email=email).first():
-            if request.is_json:
-                return jsonify({'error': 'Email already registered'}), 400
-            flash('Email already registered')
-            return redirect(url_for('register'))
-        
+            return reg_error('Email already registered')
+
         # Create new user
         user = User(username=username, email=email)
         user.set_password(password)
-        
+
         db.session.add(user)
-        db.session.commit()
-        
+        try:
+            db.session.commit()
+        except IntegrityError:
+            # Race between the existence checks above and commit
+            db.session.rollback()
+            return reg_error('Usuário ou e-mail já cadastrado')
+
         login_user(user)
-        
+
         if request.is_json:
             return jsonify({'success': True, 'username': username})
         return redirect(url_for('index'))
-    
+
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -410,7 +477,7 @@ def user_settings():
         data = request.get_json()
         current_user.settings = data
         db.session.commit()
-        return jsonify({'success': True, 'post_id': post.id})
+        return jsonify({'success': True})
     
     return jsonify(current_user.settings)
 
@@ -438,9 +505,10 @@ def upload_teaser():
                 'url': f"/static/{filename}"
             })
         else:
-            return jsonify({'error': 'Failed to save file'}), 500
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            return jsonify({'error': 'Arquivo inválido ou não é uma imagem'}), 400
+    except Exception:
+        app.logger.exception('Teaser upload failed')
+        return jsonify({'error': 'Falha ao processar o upload'}), 500
 
 # ============= ERROR HANDLERS =============
 
@@ -603,4 +671,5 @@ def make_admin():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    debug = os.environ.get('FLASK_DEBUG', 'False').lower() in ('1', 'true', 'yes', 'on')
+    app.run(debug=debug)
