@@ -19,7 +19,7 @@
                        placeholder="Título" 
                        class="w-full mb-3 p-2 bg-transparent border border-current" required>
                 
-                <div class="mb-3 flex gap-2">
+                <div class="mb-3 flex flex-wrap gap-2">
                     <select name="font" id="fontSelector" class="px-2 py-1 bg-transparent border border-current">
                         <option value="Consolas" {% if post and post.font == 'Consolas' %}selected{% endif %}>Consolas</option>
                         <option value="Courier New" {% if post and post.font == 'Courier New' %}selected{% endif %}>Courier New</option>

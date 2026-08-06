@@ -25,7 +25,15 @@
         </div>
     </header>
 
-    <div class="post-content prose prose-invert max-w-none" style="font-family: {{ post.font }};">
+    <div class="poem-zoom-controls flex justify-end items-center gap-2 mb-2 text-sm">
+        <button id="zoomOut" aria-label="Diminuir zoom"
+                class="px-2 py-1 border border-current hover:bg-current hover:text-inverse">−</button>
+        <span id="zoomLevel" title="Clique para ajustar à tela" class="opacity-70">100%</span>
+        <button id="zoomIn" aria-label="Aumentar zoom"
+                class="px-2 py-1 border border-current hover:bg-current hover:text-inverse">+</button>
+    </div>
+
+    <div id="poemContent" class="post-content prose prose-invert max-w-none" style="font-family: {{ post.font }};">
         {{ post.body_html|safe }}
     </div>
 
@@ -44,4 +52,8 @@
     </div>
     {% endif %}
 </article>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/post-view.js') }}"></script>
 {% endblock %}

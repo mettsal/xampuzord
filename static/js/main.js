@@ -7,6 +7,17 @@ function getCsrfToken() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Mobile hamburger menu
+    const navToggle = document.getElementById('navToggle');
+    const navMenu = document.getElementById('navMenu');
+    if (navToggle && navMenu) {
+        navToggle.addEventListener('click', () => {
+            const opened = navMenu.classList.toggle('flex');
+            navMenu.classList.toggle('hidden', !opened);
+            navToggle.setAttribute('aria-expanded', opened);
+        });
+    }
+
     // Enhanced B/W Theme Management
     const themeToggle = document.getElementById('themeToggle');
     const body = document.body;

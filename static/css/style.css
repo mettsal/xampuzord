@@ -201,6 +201,20 @@ body.dark {
     overflow-x: auto;
     overflow-y: visible;
     max-width: 100%;
+    /* Zoom do poema: escala tudo junto (fonte, alturas em em) como page zoom */
+    font-size: calc(1rem * var(--poem-zoom, 1));
+}
+
+/* Controles de zoom do poema */
+.poem-zoom-controls button {
+    min-width: 2rem;
+}
+
+#zoomLevel {
+    cursor: pointer;
+    min-width: 3.5rem;
+    text-align: center;
+    display: inline-block;
 }
 
 .post-content p {
@@ -294,7 +308,12 @@ body.dark {
 /* Search functionality */
 #searchBar {
     transition: all 0.3s ease;
-    min-width: 200px;
+}
+
+@media (min-width: 768px) {
+    #searchBar {
+        min-width: 200px;
+    }
 }
 
 #searchBar:focus {
