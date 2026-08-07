@@ -60,68 +60,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Search functionality
-    if (searchBar) {
-        let searchTimeout;
-        searchBar.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                const searchQuery = e.target.value.trim().toLowerCase();
-                filterPostsBySearch(searchQuery);
-            }, 300); // Debounce 300ms
-        });
-
-        // Clear search on Escape
-        searchBar.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                searchBar.value = '';
-                filterPostsBySearch('');
-            }
-        });
-    }
-
-    // Click on tags to search
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('tag-pill') && searchBar) {
-            e.stopPropagation(); // Prevent post navigation
-            const tagText = e.target.textContent.trim();
-            searchBar.value = tagText;
-            filterPostsBySearch(tagText.toLowerCase());
-            searchBar.focus();
-        }
-    });
-
-    function filterPostsBySearch(query) {
-        const postCards = document.querySelectorAll('.post-card');
-        const searchCount = document.getElementById('searchCount');
-
-        if (!query) {
-            // Show all posts
-            postCards.forEach(card => card.style.display = '');
-            if (searchCount) searchCount.classList.add('hidden');
-            return;
-        }
-
-        let visibleCount = 0;
-        postCards.forEach(card => {
-            // Get all tag elements in this card
-            const tags = card.querySelectorAll('.tag-pill');
-            const tagValues = Array.from(tags).map(tag => tag.textContent.toLowerCase());
-
-            // Check if any tag matches the search query
-            const matches = tagValues.some(tag => tag.includes(query));
-
-            card.style.display = matches ? '' : 'none';
-            if (matches) visibleCount++;
-        });
-
-        // Show count feedback
-        if (searchCount) {
-            searchCount.textContent = `${visibleCount} post${visibleCount !== 1 ? 's' : ''} encontrado${visibleCount !== 1 ? 's' : ''}`;
-            searchCount.classList.remove('hidden');
-        }
-    }
-
     // Infinite Scroll and other functionality
     const postGrid = document.getElementById('postGrid');
     const scrollSentinel = document.getElementById('scrollSentinel');
@@ -129,6 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (postGrid && scrollSentinel) {
         const PAGE_SIZE = 9; // must match app.py per_page
+        const searchCount = document.getElementById('searchCount');
         let currentPage = 2;
         let isLoading = false;
         let hasMore = true;
@@ -166,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } finally {
                 isLoading = false;
                 if (loadingIndicator) loadingIndicator.classList.add('hidden');
+                updateSearchCount();
             }
         };
 
@@ -179,8 +119,78 @@ document.addEventListener('DOMContentLoaded', function() {
         );
 
         observer.observe(scrollSentinel);
+
+        // Busca server-side: a query vai ao /api/posts como filtro de tags e o
+        // grid é reconstruído do zero — posts fora das páginas já carregadas
+        // agora aparecem nos resultados.
+        const performSearch = (query) => {
+            searchTags = query ? [query] : [];
+            postGrid.innerHTML = '';
+            currentPage = 1;
+            hasMore = true;
+            observer.observe(scrollSentinel); // re-observa se o fim anterior o removeu
+            loadMorePosts();
+        };
+
+        function updateSearchCount() {
+            if (!searchCount) return;
+            if (searchTags.length === 0) {
+                searchCount.classList.add('hidden');
+                return;
+            }
+            const count = postGrid.querySelectorAll('.post-card').length;
+            searchCount.textContent = `${count} post${count !== 1 ? 's' : ''} encontrado${count !== 1 ? 's' : ''}`;
+            searchCount.classList.remove('hidden');
+        }
+
+        if (searchBar) {
+            let searchTimeout;
+            searchBar.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    performSearch(e.target.value.trim().toLowerCase());
+                }, 300); // Debounce 300ms
+            });
+
+            // Clear search on Escape
+            searchBar.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    searchBar.value = '';
+                    clearTimeout(searchTimeout);
+                    performSearch('');
+                }
+            });
+        }
+
+        // Click on tags to search
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('tag-pill') && searchBar) {
+                e.stopPropagation(); // Prevent post navigation
+                const tagText = e.target.textContent.trim();
+                searchBar.value = tagText;
+                performSearch(tagText.toLowerCase());
+                searchBar.focus();
+            }
+        });
     }
     
+    // Mosaico 3 colunas opcional no mobile (estilo Instagram). Só existe na
+    // index; a preferência fica em localStorage como o tema global.
+    const gridToggle = document.getElementById('gridToggle');
+    if (postGrid && gridToggle) {
+        const applyGridMode = (threeCols) => {
+            postGrid.classList.toggle('mosaic-3', threeCols);
+            gridToggle.textContent = threeCols ? '▤ 1 coluna' : '▦ 3 colunas';
+            gridToggle.setAttribute('aria-pressed', threeCols);
+        };
+        applyGridMode(localStorage.getItem('gridCols') === '3');
+        gridToggle.addEventListener('click', () => {
+            const threeCols = !postGrid.classList.contains('mosaic-3');
+            localStorage.setItem('gridCols', threeCols ? '3' : '1');
+            applyGridMode(threeCols);
+        });
+    }
+
     // Create post card element with teaser support
     function createPostCard(post) {
         const card = document.createElement('div');

@@ -4,7 +4,8 @@
 {% block title %}{{ post.title }} - Xampu Para Ossos{% endblock %}
 
 {% block content %}
-<article class="max-w-4xl mx-auto post-theme-wrapper post-theme-{{ post.post_theme }} p-6">
+<article id="postThemeWrapper" data-author-theme="{{ post.post_theme }}"
+         class="max-w-4xl mx-auto post-theme-wrapper post-theme-{{ post.post_theme }} p-6">
     <header class="mb-8">
         <h1 class="text-3xl font-bold mb-4 cyber-glow">{{ post.title }}</h1>
         <div class="flex items-center justify-between text-sm opacity-70">
@@ -26,6 +27,20 @@
     </header>
 
     <div class="poem-zoom-controls flex justify-end items-center gap-2 mb-2 text-sm">
+        <label for="readerTheme" class="opacity-70">Tema:</label>
+        <select id="readerTheme" aria-label="Trocar tema de leitura"
+                class="px-2 py-1 bg-transparent border border-current">
+            <option value="">Do autor</option>
+            <option value="inherit">Herdar</option>
+            <option value="dark">⚫ Preto</option>
+            <option value="light">⚪ Branco</option>
+            <option value="cyberpunk">💜 Cyberpunk</option>
+            <option value="matrix">💚 Matrix</option>
+            <option value="vaporwave">🌸 Vaporwave</option>
+            <option value="noir">🎬 Noir</option>
+            <option value="sunset">🌅 Sunset</option>
+            <option value="ocean">🌊 Ocean</option>
+        </select>
         <button id="zoomOut" aria-label="Diminuir zoom"
                 class="px-2 py-1 border border-current hover:bg-current hover:text-inverse">−</button>
         <span id="zoomLevel" title="Clique para ajustar à tela" class="opacity-70">100%</span>
@@ -37,7 +52,7 @@
         {{ post.body_html|safe }}
     </div>
 
-    {% if current_user.is_authenticated and (current_user.id == post.author_id or current_user.is_admin) %}
+    {% if current_user.is_authenticated and current_user.is_admin %}
     <div class="mt-8 pt-8 border-t border-current">
         <div class="flex gap-4">
             <a href="{{ url_for('edit_post', post_id=post.id) }}"
@@ -55,5 +70,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/post-view.js') }}"></script>
+<script src="{{ url_for('static', filename='js/post-view.js') }}?v=20260807b"></script>
 {% endblock %}

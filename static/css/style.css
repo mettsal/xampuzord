@@ -84,10 +84,23 @@ body.dark {
     width: 100%;
 }
 
-.logo-placeholder {
-    font-size: 1.5em;
+.logo-icon {
+    height: 2rem;
+    width: auto;
     display: inline-block;
+    image-rendering: pixelated; /* pixel-art não pode borrar ao escalar */
     animation: logo-pulse 2s ease-in-out infinite;
+}
+
+/* Hover invertido dos botões: o padrão `hover:bg-current hover:text-inverse`
+   não funciona — text-inverse nunca existiu no Tailwind e currentColor
+   acompanharia a nova cor do texto (fundo e texto iguais = invisível).
+   Estas regras dão o efeito pretendido usando as variáveis de tema. */
+.hover\:bg-current:hover {
+    background-color: var(--text-color);
+}
+.hover\:text-inverse:hover {
+    color: var(--bg-color);
 }
 
 @keyframes logo-pulse {
@@ -300,10 +313,49 @@ body.dark {
     }
 }
 
-/* Hidden class utility */
-.hidden {
-    display: none !important;
+/* Mosaico 3 colunas opcional no mobile (estilo Instagram 3xM).
+   Ativado pelo #gridToggle em main.js; preferência em localStorage. */
+@media (max-width: 767px) {
+    #postGrid.mosaic-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
+
+/* ===== MOSAICO XADREZ W/B =====
+   Só em cards post-theme-inherit e só com o grid em 3 colunas (desktop md+
+   ou mosaico mobile). Padrão W W W / B W B a cada 6 cards (2 linhas):
+   as posições 4 e 6 de cada bloco de 6 são B. As vars de tema são
+   sobrescritas no card: nem o tema global interfere — W é sempre branco,
+   B é sempre preto. nth-child cobre paginação/busca sem JS. */
+@media (min-width: 768px) {
+    #postGrid .post-card.post-theme-inherit {
+        --bg-color: #ffffff;
+        --text-color: #000000;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+    }
+    #postGrid .post-card.post-theme-inherit:nth-child(6n+4),
+    #postGrid .post-card.post-theme-inherit:nth-child(6n+6) {
+        --bg-color: #000000;
+        --text-color: #ffffff;
+    }
+}
+@media (max-width: 767px) {
+    #postGrid.mosaic-3 .post-card.post-theme-inherit {
+        --bg-color: #ffffff;
+        --text-color: #000000;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+    }
+    #postGrid.mosaic-3 .post-card.post-theme-inherit:nth-child(6n+4),
+    #postGrid.mosaic-3 .post-card.post-theme-inherit:nth-child(6n+6) {
+        --bg-color: #000000;
+        --text-color: #ffffff;
+    }
+}
+
+/* (a classe .hidden do Tailwind cobre este caso; uma versão local com
+   !important quebrava o md:flex do menu desktop — removida de propósito) */
 
 /* Search functionality */
 #searchBar {

@@ -241,12 +241,15 @@ def api_posts():
     
     # Filter by tags if provided
     if tags_filter:
-        # This is a simple implementation - in production, use proper SQL filtering
+        # Substring case-insensitive: "ciber" casa com "cybernetic", como a
+        # busca que o usuário já conhecia no cliente. Ainda é O(N) em Python
+        # (tags vivem numa coluna JSON) — migrar para filtro SQL ao crescer.
+        wanted = [str(t).lower() for t in tags_filter]
         posts = []
         all_posts = query.order_by(Post.created_at.desc()).all()
         for post in all_posts:
-            post_tags = [t['value'] for t in post.tags]
-            if any(tag in post_tags for tag in tags_filter):
+            post_tags = [str(t.get('value', '')).lower() for t in post.tags]
+            if any(q in pt for q in wanted for pt in post_tags):
                 posts.append(post)
         posts = posts[(page-1)*9:page*9]
     else:
@@ -269,6 +272,13 @@ def view_post(post_id):
 @limiter.limit("20 per hour")  # Prevent spam posting
 def new_post():
     """Create new post"""
+    # Apenas admins publicam: registro é aberto, mas usuário comum é read-only
+    if not current_user.is_admin:
+        if request.is_json:
+            return jsonify({'error': 'Apenas admins podem publicar posts'}), 403
+        flash('Apenas admins podem publicar posts')
+        return redirect(url_for('index'))
+
     if request.method == 'POST':
         data = request.get_json() if request.is_json else request.form
         
@@ -306,9 +316,11 @@ def edit_post(post_id):
     """Edit existing post"""
     post = Post.query.get_or_404(post_id)
     
-    # Check ownership
-    if post.author_id != current_user.id and not current_user.is_admin:
-        flash('You can only edit your own posts')
+    # Apenas admins editam (usuário comum é read-only, inclusive os próprios posts)
+    if not current_user.is_admin:
+        if request.is_json:
+            return jsonify({'error': 'Apenas admins podem editar posts'}), 403
+        flash('Apenas admins podem editar posts')
         return redirect(url_for('index'))
     
     if request.method == 'POST':
@@ -339,11 +351,11 @@ def delete_post(post_id):
     """Delete existing post"""
     post = Post.query.get_or_404(post_id)
 
-    # Check ownership - only author or admin can delete
-    if post.author_id != current_user.id and not current_user.is_admin:
+    # Apenas admins deletam (usuário comum é read-only, inclusive os próprios posts)
+    if not current_user.is_admin:
         if request.is_json:
-            return jsonify({'error': 'Permission denied'}), 403
-        flash('You can only delete your own posts')
+            return jsonify({'error': 'Apenas admins podem deletar posts'}), 403
+        flash('Apenas admins podem deletar posts')
         return redirect(url_for('view_post', post_id=post_id))
 
     # Delete teaser image file if it exists
@@ -486,6 +498,10 @@ def user_settings():
 @limiter.limit("10 per minute")  # Prevent upload spam
 def upload_teaser():
     """Upload teaser image for posts"""
+    # Upload cai no diretório público: restringir a admins como o restante da escrita
+    if not current_user.is_admin:
+        return jsonify({'error': 'Apenas admins podem enviar imagens'}), 403
+
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
     

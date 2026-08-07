@@ -2,6 +2,12 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="md:hidden flex justify-end mb-2">
+    <button id="gridToggle" aria-pressed="false"
+            class="px-3 py-2 border border-current hover:bg-current hover:text-inverse text-sm">
+        ▦ 3 colunas
+    </button>
+</div>
 <div id="postGrid" class="grid grid-cols-1 md:grid-cols-3 gap-0 mb-8">
     {% for post in posts %}
     <div class="post-card p-0 hover:scale-105 transition-transform cursor-pointer relative post-theme-{{ post.post_theme if post.post_theme else 'inherit' }}"

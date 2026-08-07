@@ -1,5 +1,102 @@
 # Changelog - Xampu Para Ossos
 
+## [Unreleased] - 2026-08-07
+
+### ✅ Features e mudanças de comportamento
+
+#### Mosaico xadrez W/B no grid
+- Cards `post-theme-inherit` alternam no padrão **W W W / B W B** (posições 4
+  e 6 de cada 6 cards são pretas), só quando o grid está em 3 colunas
+  (desktop md+ ou mosaico mobile)
+- Implementado em CSS puro com `nth-child` — cobre paginação e busca sem JS;
+  as vars `--bg-color`/`--text-color` são sobrescritas no card, então o padrão
+  **ignora o tema global** (W sempre branco, B sempre preto)
+- Cards com tema próprio (cyberpunk, matrix...) mantêm seu tema no grid
+
+#### Seletor de tema para o leitor (página do post)
+- Dropdown "Tema:" junto aos controles de zoom: o leitor troca entre os 9
+  temas só para a própria leitura — **não altera o post salvo**
+- Preferência em localStorage (`readerPostTheme`); opção "Do autor" restaura
+  o tema escolhido pelo autor (padrão)
+
+#### Permissões: usuário comum passa a ser read-only
+- **Antes**: qualquer conta registrada podia criar posts e editar/deletar os
+  próprios — na prática, qualquer visitante publicava no blog
+- **Agora**: criar/editar/deletar posts e upload de teaser exigem `is_admin`;
+  registro segue aberto (conta existe para futuras features), mas usuário
+  comum só lê. Backend retorna 403 (JSON) ou redirect com flash em PT-BR
+- UI: "+ Novo Post" (navbar) e botões Editar/Deletar (página do post) só
+  aparecem para admins
+- Promoção a admin segue via `flask make-admin`
+
+### 🚨 Incidente de infraestrutura (documentado para não repetir)
+
+**Sintoma**: mudanças deployadas não apareciam no ar, mesmo com
+`systemctl restart xampuzord` e Purge Everything no Cloudflare.
+
+**Causa raiz (dupla)**:
+1. Existia uma **instância órfã do gunicorn** (PID 726, iniciada manualmente
+   em 21/jul fora do systemd) escutando em `127.0.0.1:5000`, com código e
+   templates antigos em memória.
+2. O nginx ativo (`/etc/nginx/sites-enabled/xampuzord`, arquivo real) fazia
+   `proxy_pass http://127.0.0.1:5000` — ou seja, **toda a produção era servida
+   pela órfã**. O serviço systemd (socket `/run/xampuzord/xampuzord.sock`)
+   estava correto, mas fora do caminho do tráfego.
+
+Agravante: a config versionada no repo (symlink `xampuzord` →
+`sites-available`) apontava um terceiro caminho (`/run/xampuzord.sock`,
+inexistente). Três fontes divergentes de verdade.
+
+**Resolução**: `proxy_pass` do `sites-enabled` repontado para o socket do
+systemd, `nginx -t` + reload, órfã morta. Verificado por curl comparando
+marcações (logo novo, `gridToggle`) em cada ponta: porta 5000, socket e HTTPS.
+
+**Lição**: um único dono para o app (systemd), uma única fonte da config
+nginx (repo), e nunca subir gunicorn manual "só para testar" em porta de
+produção. Ver AGENTS.md > Deployment.
+
+## [Unreleased] - 2026-08-06
+
+### ✅ Correções
+
+#### Mosaico 3 colunas opcional no mobile (estilo Instagram 3xM)
+- Botão **▦ 3 colunas** acima do grid, visível apenas no mobile (`md:hidden`),
+  alterna entre 1 coluna (padrão) e o mosaico 3xM igual ao desktop
+- Preferência persistida em `localStorage` (`gridCols`), mesmo padrão do tema
+  global; o rótulo do botão reflete o estado ("▦ 3 colunas" / "▤ 1 coluna")
+- Implementação: `#postGrid.mosaic-3` força `grid-template-columns` via media
+  query `max-width: 767px` (não interfere no desktop)
+- Cache-busting: `?v=` no CSS/JS do `base.html` (nginx serve estáticos com
+  `expires 30d`) — bump da data a cada mudança em CSS/JS
+
+#### Header desktop invisível + novo logo
+- **Causa raiz**: `style.css` definia `.hidden { display: none !important }`,
+  que vencia o `md:flex` do Tailwind e mantinha o menu (`navMenu`) oculto
+  em qualquer largura — no desktop só o logo aparecia. A utilidade local foi
+  removida (o Tailwind gera a sua própria `.hidden`).
+- **Hover dos botões corrigido**: o padrão `hover:bg-current hover:text-inverse`
+  nunca funcionou (`text-inverse` não existe no Tailwind e `currentColor`
+  acompanharia a cor nova do texto → texto invisível no hover). Substituído
+  por regras em `style.css` usando `--text-color`/`--bg-color` — vale para
+  todos os templates, nos dois temas globais.
+- **Logo novo**: emoji 🧴 substituído pelo ícone pixel-art da caveira
+  (`static/images/wp-icon.png`, extraído de `graphics/wp-icon-build.png` com
+  remoção do halo semi-opaco), com `image-rendering: pixelated`.
+
+#### Busca por tags agora é server-side de verdade
+- **Antes**: a busca só escondia/mostrava os cards já carregados no cliente —
+  posts fora das páginas do infinite scroll pareciam não existir
+  (`searchTags` era sempre `[]` e nunca ia ao `/api/posts`).
+- **Agora**: `main.js` envia a query ao `/api/posts?tags=[...]`, reconstrói
+  o grid do zero e o infinite scroll continua paginando dentro do filtro
+  ativo. ESC e click em tag usam o mesmo caminho. Contador de resultados
+  reflete os posts carregados do filtro.
+- **Backend**: o filtro de tags do `/api/posts` passou de match exato para
+  substring case-insensitive ("ciber" casa "cybernetic"), igualando o
+  comportamento que o usuário já conhecia da busca antiga.
+- Documentação de agentes criada: `AGENTS.md` com arquitetura, convenções,
+  princípios de UX e backlog priorizado de fraquezas.
+
 ## [Unreleased] - 2026-05-14
 
 ### 🎨 Features Principais Adicionadas
