@@ -79,6 +79,9 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     body_html = db.Column(db.Text, nullable=False)
+    # Fonte Markdown do post (o que o autor digitou no editor). NULL em posts
+    # legados/importados — o editor cai no fallback body_html nesses casos.
+    body_md = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     tags = db.Column(db.JSON, default=list)
@@ -313,6 +316,7 @@ def new_post():
         
         title = data.get('title', 'Untitled')
         body_html = sanitize_html(data.get('body_html', ''))
+        body_md = data.get('body_md') or None
         tags = process_tags(data.get('tags', ''))
         font = data.get('font', 'Consolas')
         teaser_image = data.get('teaser_image', None)
@@ -322,6 +326,7 @@ def new_post():
         post = Post(
             title=title,
             body_html=body_html,
+            body_md=body_md,
             tags=tags,
             font=font,
             teaser_image=teaser_image,
@@ -357,6 +362,7 @@ def edit_post(post_id):
         
         post.title = data.get('title', post.title)
         post.body_html = sanitize_html(data.get('body_html', post.body_html))
+        post.body_md = data.get('body_md') or post.body_md
         # Release the old tags' counts before re-processing so edits don't inflate them
         decrement_tags(post.tags)
         post.tags = process_tags(data.get('tags', ''))

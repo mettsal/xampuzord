@@ -229,6 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const payload = {
                 title: formData.get('title'),
                 body_html: bodyHtml,
+                body_md: bodyMarkdown,
                 tags: formData.get('tags'),
                 font: formData.get('font'),
                 post_theme: formData.get('post_theme') || 'inherit',

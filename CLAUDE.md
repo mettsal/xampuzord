@@ -41,8 +41,9 @@ flask init-db
 # Popular com posts de exemplo
 flask seed-db
 
-# Migração: adicionar post_theme (se atualizando de versão antiga)
+# Migrações (se atualizando de versão antiga): post_theme e body_md
 python tools/migrate_add_post_theme.py
+python tools/migrate_add_post_body_md.py
 
 # Banco SQLite: instance/xampuparaossos.db
 ```
@@ -240,6 +241,7 @@ foram corrigidos; CAPTCHA no registro segue pendente, ver SECURITY.md).
 - `.env.example` - Template de variáveis de ambiente
 - `SECURITY.md` - Guia completo de segurança (16 páginas)
 - `tools/migrate_add_post_theme.py` - Script de migração para post_theme
+- `tools/migrate_add_post_body_md.py` - Script de migração para body_md (fonte Markdown)
 
 **Comandos de Deploy:**
 ```bash
@@ -252,6 +254,7 @@ cp .env.example .env
 
 # Migrar database se necessário
 python tools/migrate_add_post_theme.py
+python tools/migrate_add_post_body_md.py
 
 # Rodar com gunicorn (produção)
 gunicorn -w 4 -b 0.0.0.0:5000 app:app

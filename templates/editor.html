@@ -47,7 +47,7 @@
                 
                 <textarea name="body" id="postBody" 
                           placeholder="Padrão : Markdown" 
-                          class="w-full h-64 p-3 bg-transparent border border-current font-mono" required>{% if post %}{{ post.body_html }}{% endif %}</textarea>
+                          class="w-full h-64 p-3 bg-transparent border border-current font-mono" required>{% if post %}{{ post.body_md or post.body_html }}{% endif %}</textarea>
                 
                 <!-- Teaser Section -->
                 <div class="mt-4 p-3 border border-current">
@@ -109,5 +109,5 @@
     </form>
 </div>
 
-<script src="{{ url_for('static', filename='js/editor.js') }}"></script>
+<script src="{{ url_for('static', filename='js/editor.js') }}?v=20260817"></script>
 {% endblock %}

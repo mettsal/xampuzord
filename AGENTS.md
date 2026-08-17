@@ -30,6 +30,7 @@ pip install -r requirements.txt
 flask init-db                  # criar tabelas (create_all — seguro repetir; rode a cada deploy que adicionar modelos)
 flask seed-db                  # dados de exemplo
 python tools/migrate_add_post_theme.py  # migração legada, só se o banco for antigo
+python tools/migrate_add_post_body_md.py  # idem: coluna body_md (fonte Markdown)
 
 # Rodar (http://localhost:5000)
 python run.py                  # debug via FLASK_DEBUG=True no .env
@@ -75,7 +76,9 @@ cf-ddns.sh                # DDNS Cloudflare p/ self-hosting (placeholders, não 
 
 ### Modelo de dados (app.py)
 - `User`: username, email, password_hash, settings (JSON), is_admin
-- `Post`: title, body_html (sanitizado), tags (JSON `[{type, value}]`),
+- `Post`: title, body_html (sanitizado), body_md (fonte Markdown; NULL em
+  posts legados/importados — o editor usa body_html como fallback), tags
+  (JSON `[{type, value}]`),
   font, post_theme, teaser_type, teaser_image, views, author_id
 - `Tag`: agregado global (name, type, count) — `process_tags()` incrementa,
   `decrement_tags()` decrementa ao editar/deletar. **Manter o count correto**
@@ -85,10 +88,16 @@ cf-ddns.sh                # DDNS Cloudflare p/ self-hosting (placeholders, não 
   delete só admin. Os três têm cascade: morrem junto com o post.
 
 ### Fluxo de criação de post
-1. Editor converte Markdown → HTML no cliente (marked.js)
-2. Backend sanitiza via `sanitize_html()` (bleach, allowlist) e envolve em
-   `<pre><code>` se necessário — o visual "editor de código" é intencional
+1. Editor converte Markdown → HTML no cliente (marked.js) e envia os dois:
+   `body_md` (fonte crua, reeditável) + `body_html`
+2. Backend sanitiza o HTML via `sanitize_html()` (bleach, allowlist) e envolve
+   em `<pre><code>` se necessário — o visual "editor de código" é intencional
 3. Tags viram JSON: `YYYY` → `type: year`, resto → `type: genre`
+
+Na edição, o textarea recebe `body_md` (ou `body_html` se o post for legado,
+`body_md IS NULL`). O importador do acervo **não** preenche `body_md` de
+propósito: o texto-fonte dos poemas passaria pelo `marked.parse` no próximo
+save e perderia as quebras de linha (whitespace é conteúdo).
 
 ### Consistência visual (intencional, não "corrigir")
 - `font-kerning: normal`, `text-rendering: optimizeSpeed`, line-height 1.2,
@@ -153,27 +162,23 @@ atualize esta lista.
 2. **`window.currentUser` nunca é definido**: o save de preferências em
    `/api/user/settings` (main.js:~50) é código morto. Definir a flag no
    `base.html` ou remover o caminho morto.
-3. **Round-trip Markdown no editor**: ao editar, o textarea recebe `body_html`
-   (HTML) e na submissão passa de novo pelo `marked.parse`. Funciona por
-   sorte (HTML passa intacto), mas é frágil e confunde. Decidir: guardar o
-   Markdown fonte (coluna nova) ou documentar que edição é sobre HTML.
 
 ### P1 — Profissionalização
-5. **Sem testes**: zero cobertura. Mínimo viável: smoke tests das rotas
+3. **Sem testes**: zero cobertura. Mínimo viável: smoke tests das rotas
    (Flask test client) + teste de `sanitize_html` e `process/decrement_tags`.
-6. **`html lang="en"`** em `base.html` com UI em PT-BR — acessibilidade/SEO.
-7. **Mensagens misturadas PT/EN**: "Username already exists", "You can only
+4. **`html lang="en"`** em `base.html` com UI em PT-BR — acessibilidade/SEO.
+5. **Mensagens misturadas PT/EN**: "Username already exists", "You can only
    edit your own posts" etc. Padronizar PT-BR.
-8. **Views infladas**: `view_post` incrementa a cada request (refresh, bots,
+6. **Views infladas**: `view_post` incrementa a cada request (refresh, bots,
    o próprio autor). Considerar throttle por sessão.
-9. **Autocomplete de tags**: `/api/tags` existe, UI nunca foi conectada.
-10. **Deprecations**: `datetime.utcnow` e `Query.get()` geram warnings em
-    SQLAlchemy 2 / Python 3.12+.
-11. **Tailwind Play CDN** não é para produção (aviso no console, flash de
-    estilo). Gerar CSS estático no build de deploy.
+7. **Autocomplete de tags**: `/api/tags` existe, UI nunca foi conectada.
+8. **Deprecations**: `datetime.utcnow` e `Query.get()` geram warnings em
+   SQLAlchemy 2 / Python 3.12+.
+9. **Tailwind Play CDN** não é para produção (aviso no console, flash de
+   estilo). Gerar CSS estático no build de deploy.
 
 ### P2 — Higiene do repositório
-12. **Sem headers de segurança** (CSP, X-Frame-Options) e sem CAPTCHA no
+10. **Sem headers de segurança** (CSP, X-Frame-Options) e sem CAPTCHA no
     registro — já listados no SECURITY.md como TODO.
 
 ## Deployment

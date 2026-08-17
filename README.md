@@ -60,6 +60,7 @@ flask seed-db  # Opcional: dados de exemplo (cria o admin padrão do seed)
 5. **IMPORTANTE - Migração**: Se estiver atualizando de versão antiga, rode:
 ```bash
 python tools/migrate_add_post_theme.py
+python tools/migrate_add_post_body_md.py
 ```
 
 6. Execute a aplicação:
@@ -114,7 +115,8 @@ boneshampoo/
 ├── requirements.txt              # Dependências Python
 ├── tools/                        # Scripts utilitários
 │   ├── import_posts.py          # Importador do acervo poesia/
-│   └── migrate_add_post_theme.py # Migração legada (post_theme)
+│   ├── migrate_add_post_theme.py # Migração legada (post_theme)
+│   └── migrate_add_post_body_md.py # Migração legada (body_md)
 ├── CLAUDE.md                     # Guia para Claude Code
 ├── templates/                    # Templates Jinja2
 │   ├── base.html                # Template base com navbar

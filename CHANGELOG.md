@@ -1,5 +1,21 @@
 # Changelog - Xampu Para Ossos
 
+## [Unreleased] - 2026-08-17
+
+### ✅ Fix — P0-3: fonte Markdown dos posts (`body_md`)
+- Nova coluna `Post.body_md` guarda o Markdown original digitado no editor;
+  `body_html` continua sendo o derivado sanitizado que vai para a página
+- Editor agora carrega `body_md` no textarea — fim do round-trip
+  HTML → marked.parse → HTML (frágil). Fallback `body_md or body_html`
+  mantém a edição de posts legados funcionando como antes
+- O importador do acervo (`tools/import_posts.py`) **não** preenche `body_md`
+  de propósito: o texto-fonte dos poemas perderia as quebras de linha se
+  passasse pelo `marked.parse` num futuro save (whitespace é conteúdo)
+- Migração idempotente: `python tools/migrate_add_post_body_md.py`
+  (549 posts existentes ficam com `body_md NULL`)
+- `editor.js` ganhou `?v=` na tag script (estava sem cache-busting)
+- Item removido do backlog P0 no AGENTS.md
+
 ## [Unreleased] - 2026-08-16
 
 ### ✅ Fixes
