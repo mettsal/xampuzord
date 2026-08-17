@@ -22,7 +22,7 @@
             <div class="absolute inset-0 flex flex-col justify-between p-4 overlay-content">
                 <div></div> <!-- Spacer for centering -->
                 <h3 class="text-center text-lg glowy-title">{{ post.title }}</h3>
-                <div class="flex flex-wrap gap-2 justify-center">
+                <div class="hidden md:flex flex-wrap gap-2 justify-center">
                     {% for tag in post.tags %}
                     <span class="tag-pill px-2 py-1 text-xs border border-current">
                         {{ tag.value }}
@@ -37,7 +37,7 @@
                     @{{ post.author.username }} • {{ post.created_at.strftime('%d/%m/%Y') }}
                 </div>
                 <div class="text-sm opacity-50 italic mb-3">Post sem preview</div>
-                <div class="flex flex-wrap gap-2 mb-2">
+                <div class="hidden md:flex flex-wrap gap-2 mb-2">
                     {% for tag in post.tags %}
                     <span class="tag-pill px-2 py-1 text-xs border border-current">
                         {{ tag.value }}
@@ -56,7 +56,7 @@
                 </div>
                 <div class="absolute bottom-4 left-4 right-4">
                     <h3 class="text-left text-sm glowy-title mb-2">{{ post.title }}</h3>
-                    <div class="flex flex-wrap gap-1">
+                    <div class="hidden md:flex flex-wrap gap-1">
                         {% for tag in post.tags %}
                         <span class="tag-pill px-1 py-0.5 text-xs border border-current">
                             {{ tag.value }}

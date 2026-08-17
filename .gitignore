@@ -15,3 +15,8 @@ poesia/
 *.swp
 *.swo
 .DS_Store
+# Arquivos de trabalho/referência visual (não versionar)
+ref/
+refs/
+xampuzord
+.claude/

@@ -1,0 +1,45 @@
+<!-- templates/depoimentos.html -->
+{% extends "base.html" %}
+
+{% block title %}Depoimentos - Xampu Para Ossos{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h2 class="text-2xl font-bold mb-6 cyber-glow">Depoimentos</h2>
+    <p class="opacity-70 mb-6">Um guestbook à moda antiga: deixe suas palavras sobre o blog.</p>
+
+    {% if current_user.is_authenticated %}
+    <form method="POST" action="{{ url_for('depoimentos') }}" class="mb-8">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <textarea name="body" required maxlength="2000" placeholder="Deixe seu depoimento..."
+                  class="w-full h-24 p-3 bg-transparent border border-current"></textarea>
+        <button type="submit" class="mt-2 px-4 py-2 border border-current hover:bg-current hover:text-inverse">
+            Publicar depoimento
+        </button>
+    </form>
+    {% else %}
+    <p class="opacity-70 mb-8">
+        <a href="{{ url_for('login') }}" class="underline">Entre</a> ou
+        <a href="{{ url_for('register') }}" class="underline">cadastre um pseudônimo</a> para deixar um depoimento.
+    </p>
+    {% endif %}
+
+    {% for item in testimonials %}
+    <div class="mb-4 p-4 border border-current">
+        <div class="text-sm opacity-70 mb-1">@{{ item.author.username }} • {{ item.created_at.strftime('%d/%m/%Y') }}</div>
+        <div class="comment-body">{{ item.body }}</div>
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <form method="POST" action="{{ url_for('delete_testimonial', item_id=item.id) }}"
+              onsubmit="return confirm('Deletar este depoimento?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="mt-2 text-xs px-2 py-1 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors">
+                Deletar
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    {% else %}
+    <p class="opacity-70 italic">Nenhum depoimento ainda. Seja a primeira voz no guestbook.</p>
+    {% endfor %}
+</div>
+{% endblock %}

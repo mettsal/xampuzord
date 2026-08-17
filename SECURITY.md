@@ -13,6 +13,9 @@ Proteção contra ataques de força bruta e spam:
 | `/register` | 5 por hora | Prevenir criação massiva de contas |
 | `/post/new` | 20 por hora | Prevenir spam de posts |
 | `/api/upload/teaser` | 10 por minuto | Prevenir abuso de upload |
+| `/post/<id>/like` | 30 por minuto | Curtidas anônimas sem flood |
+| `/post/<id>/comment` | 10 por hora | Spam de comentários |
+| `/depoimentos` (POST) | 10 por hora | Spam de depoimentos |
 | Global | 200/dia, 50/hora | Limite geral |
 
 ### 2. **Autenticação Segura**
@@ -35,7 +38,7 @@ Proteção contra ataques de força bruta e spam:
 
 ### 5. **Controle de Acesso**
 - ✅ `@login_required` em rotas protegidas
-- ✅ Verificação de ownership (só autor ou admin pode editar/deletar)
+- ✅ Verificação de role (só admins criam/editam/deletam posts; usuário comum é read-only)
 - ✅ Role-based access (admin dashboard)
 
 ## ⚠️ Configurações OBRIGATÓRIAS para Produção
@@ -221,7 +224,7 @@ Correções já no código (ver `app.py`, `config.py`, `run.py`, `static/js/`):
 - **Rate limiter em memória**: `storage_uri="memory://"` é **por-worker**. Sob
   `gunicorn -w 4` os limites ficam ~4x maiores e zeram a cada restart. Em
   produção séria, aponte o Flask-Limiter para **Redis**.
-- **Credenciais seed**: `flask seed-db` cria `admin/admin123` e `poet_*/password123`.
+- **Credenciais seed**: `flask seed-db` cria o admin padrão (senha no código) e `poet_*/password123`.
   **Troque/rotacione imediatamente** após o primeiro deploy (`flask reset-admin-password`).
 
 ## 🚨 Vulnerabilidades Conhecidas

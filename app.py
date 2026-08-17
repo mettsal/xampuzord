@@ -88,6 +88,10 @@ class Post(db.Model):
     teaser_image = db.Column(db.String(200), nullable=True)  # Path to teaser image
     teaser_type = db.Column(db.String(20), default='auto')  # 'image', 'auto', or 'none'
     post_theme = db.Column(db.String(50), default='inherit')  # Theme: inherit, dark, light, cyberpunk, matrix, etc.
+    # Interações passivas morrem junto com o post (cascade)
+    likes = db.relationship('Like', backref='post', lazy=True, cascade='all, delete-orphan')
+    comments = db.relationship('Comment', backref='post', lazy=True,
+                               cascade='all, delete-orphan', order_by='Comment.created_at')
     
     def to_dict(self):
         return {
@@ -109,6 +113,31 @@ class Tag(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     type = db.Column(db.String(20), nullable=False)  # 'year', 'genre', etc.
     count = db.Column(db.Integer, default=0)
+
+class Like(db.Model):
+    """Curtida anônima: um por post por visitante (UUID gerado no navegador)."""
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    visitor_id = db.Column(db.String(36), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (db.UniqueConstraint('post_id', 'visitor_id'),)
+
+class Comment(db.Model):
+    """Comentário de usuário logado; publica direto, admin pode deletar."""
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    author = db.relationship('User', backref='comments')
+
+class Testimonial(db.Model):
+    """Depoimento (guestbook) de usuário logado; admin pode deletar."""
+    id = db.Column(db.Integer, primary_key=True)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    author = db.relationship('User', backref='testimonials')
 
 # ============= HELPERS =============
 
@@ -378,6 +407,89 @@ def delete_post(post_id):
     flash('Post deleted successfully')
     return redirect(url_for('index'))
 
+# ============= INTERAÇÕES PASSIVAS (curtir / comentar / depoimentos) =============
+
+@app.route('/post/<int:post_id>/like', methods=['POST'])
+@limiter.limit("30 per minute")  # Curtida anônima: limite por IP contra flood
+def like_post(post_id):
+    """Toggle de curtida anônima (visitor_id = UUID no localStorage do visitante)"""
+    post = Post.query.get_or_404(post_id)
+    data = request.get_json(silent=True) or {}
+    visitor_id = str(data.get('visitor_id', ''))[:36]
+    if not visitor_id:
+        return jsonify({'error': 'visitor_id ausente'}), 400
+
+    existing = Like.query.filter_by(post_id=post.id, visitor_id=visitor_id).first()
+    if existing:
+        db.session.delete(existing)
+        liked = False
+    else:
+        db.session.add(Like(post_id=post.id, visitor_id=visitor_id))
+        liked = True
+    db.session.commit()
+
+    count = Like.query.filter_by(post_id=post.id).count()
+    return jsonify({'success': True, 'liked': liked, 'likes': count})
+
+@app.route('/post/<int:post_id>/comment', methods=['POST'])
+@login_required
+@limiter.limit("10 per hour")  # Comentário exige conta; limite contra spam
+def add_comment(post_id):
+    """Add comment to post (publica direto; admin deleta depois se preciso)"""
+    post = Post.query.get_or_404(post_id)
+    body = (request.form.get('body') or '').strip()[:2000]
+    if not body:
+        flash('Comentário vazio')
+        return redirect(url_for('view_post', post_id=post.id))
+
+    db.session.add(Comment(post_id=post.id, author_id=current_user.id, body=body))
+    db.session.commit()
+    return redirect(url_for('view_post', post_id=post.id))
+
+@app.route('/comment/<int:comment_id>/delete', methods=['POST'])
+@login_required
+def delete_comment(comment_id):
+    """Delete comment - admin only"""
+    comment = Comment.query.get_or_404(comment_id)
+    if not current_user.is_admin:
+        flash('Apenas admins podem deletar comentários')
+        return redirect(url_for('view_post', post_id=comment.post_id))
+
+    post_id = comment.post_id
+    db.session.delete(comment)
+    db.session.commit()
+    return redirect(url_for('view_post', post_id=post_id))
+
+@app.route('/depoimentos', methods=['GET', 'POST'])
+@limiter.limit("10 per hour", methods=["POST"])  # Limite só na escrita
+def depoimentos():
+    """Guestbook: GET lista, POST adiciona (exige login)"""
+    if request.method == 'POST':
+        if not current_user.is_authenticated:
+            flash('Entre ou cadastre um pseudônimo para deixar um depoimento')
+            return redirect(url_for('login'))
+        body = (request.form.get('body') or '').strip()[:2000]
+        if body:
+            db.session.add(Testimonial(author_id=current_user.id, body=body))
+            db.session.commit()
+        return redirect(url_for('depoimentos'))
+
+    items = Testimonial.query.order_by(Testimonial.created_at.desc()).all()
+    return render_template('depoimentos.html', testimonials=items)
+
+@app.route('/depoimento/<int:item_id>/delete', methods=['POST'])
+@login_required
+def delete_testimonial(item_id):
+    """Delete testimonial - admin only"""
+    item = Testimonial.query.get_or_404(item_id)
+    if not current_user.is_admin:
+        flash('Apenas admins podem deletar depoimentos')
+        return redirect(url_for('depoimentos'))
+
+    db.session.delete(item)
+    db.session.commit()
+    return redirect(url_for('depoimentos'))
+
 @app.route('/register', methods=['GET', 'POST'])
 @limiter.limit("5 per hour")  # Prevent mass account creation
 def register():
@@ -553,8 +665,8 @@ def init_db():
 def seed_db():
     """Seed database with sample data"""
     # Create admin user
-    admin = User(username='admin', email='admin@xampuparaossos.com', is_admin=True)
-    admin.set_password('admin123')
+    admin = User(username='xampuzordmin', email='admin@xampuparaossos.com', is_admin=True)
+    admin.set_password('cipherbill64')
     db.session.add(admin)
 
     # Create sample users

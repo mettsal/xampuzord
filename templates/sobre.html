@@ -6,142 +6,25 @@
 {% block content %}
 <div class="max-w-4xl mx-auto">
     <h1 class="text-4xl font-bold mb-8 cyber-glow text-center">
-        🧴 XAMPU PARA OSSOS
+        XAMPU PARA OSSOS
     </h1>
 
     <div class="space-y-8 leading-relaxed">
         <section>
             <h2 class="text-2xl font-bold mb-4 border-b border-current pb-2">O que é isso?</h2>
             <p class="mb-4">
-                Um blog minimalista de poesia digital com estética cyberpunk/K-punk.
-                Interface tipo Instagram grid 3x3, temas customizados por post, editor Markdown,
-                e sistema de teasers.
-            </p>
+                "Poesia brasileira colonizada e antropomórfica. Um projeto para transformar mausoléu em santuário."
+                "Quando cheguei na internet, era tudo mato.""       </p>
             <p class="mb-4">
-                Nascido da fusão entre a poesia romântica gótica e a cultura cibernética contemporânea,
-                este espaço existe para palavras que não cabem em lugar nenhum — exceto aqui.
+            <!--  -->
             </p>
         </section>
 
-        <section>
-            <h2 class="text-2xl font-bold mb-4 border-b border-current pb-2">Funcionalidades</h2>
-            <ul class="list-disc list-inside space-y-2 opacity-80">
-                <li><strong>Grid 3x3</strong> tipo Instagram com infinite scroll</li>
-                <li><strong>9 temas customizados</strong> por post (cyberpunk, matrix, vaporwave, noir, etc.)</li>
-                <li><strong>Editor Markdown</strong> com auto-save e keyboard shortcuts</li>
-                <li><strong>Sistema de teasers</strong>: preview automático, imagem ou nenhum</li>
-                <li><strong>Search em tempo real</strong>: clique em tags ou digite para filtrar</li>
-                <li><strong>Upload de imagens</strong> drag-and-drop para teasers</li>
-                <li><strong>Scroll horizontal</strong> para posts largos</li>
-                <li><strong>Toggle Preto/Branco</strong> para navegação global</li>
-            </ul>
-        </section>
-
-        <section>
-            <h2 class="text-2xl font-bold mb-4 border-b border-current pb-2">Tech Stack</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="border border-current p-4">
-                    <h3 class="font-bold mb-2 cyber-glow">Backend</h3>
-                    <ul class="text-sm space-y-1 opacity-70">
-                        <li>• Flask (Python 3.10+)</li>
-                        <li>• SQLAlchemy ORM</li>
-                        <li>• SQLite (dev) / PostgreSQL (prod)</li>
-                        <li>• Flask-Login (auth)</li>
-                        <li>• Bleach (XSS protection)</li>
-                    </ul>
-                </div>
-                <div class="border border-current p-4">
-                    <h3 class="font-bold mb-2 cyber-glow">Frontend</h3>
-                    <ul class="text-sm space-y-1 opacity-70">
-                        <li>• Vanilla JavaScript</li>
-                        <li>• Tailwind CSS (CDN)</li>
-                        <li>• marked.js (Markdown)</li>
-                        <li>• CSS Custom Properties</li>
-                        <li>• IntersectionObserver API</li>
-                    </ul>
-                </div>
-            </div>
-        </section>
-
-        <section>
-            <h2 class="text-2xl font-bold mb-4 border-b border-current pb-2">Temas Disponíveis</h2>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <div class="post-theme-inherit border border-current p-3 text-center transition-all hover:scale-105">
-                    <div class="font-bold">Herdar</div>
-                    <div class="text-xs opacity-70">Tema global</div>
-                </div>
-                <div class="post-theme-dark border border-current p-3 text-center transition-all hover:scale-105">
-                    <div class="font-bold">Preto</div>
-                    <div class="text-xs opacity-70">#000</div>
-                </div>
-                <div class="post-theme-light border border-current p-3 text-center transition-all hover:scale-105">
-                    <div class="font-bold">Branco</div>
-                    <div class="text-xs opacity-70">#fff</div>
-                </div>
-                <div class="post-theme-cyberpunk border border-current p-3 text-center transition-all hover:scale-105">
-                    <div class="font-bold">Cyberpunk</div>
-                    <div class="text-xs opacity-70">Ciano+Magenta</div>
-                </div>
-                <div class="post-theme-matrix border border-current p-3 text-center transition-all hover:scale-105">
-                    <div class="font-bold">Matrix</div>
-                    <div class="text-xs opacity-70">Verde matrix</div>
-                </div>
-                <div class="post-theme-vaporwave border border-current p-3 text-center transition-all hover:scale-105">
-                    <div class="font-bold">Vaporwave</div>
-                    <div class="text-xs opacity-70">Rosa/Roxo/Azul</div>
-                </div>
-                <div class="post-theme-noir border border-current p-3 text-center transition-all hover:scale-105">
-                    <div class="font-bold">Noir</div>
-                    <div class="text-xs opacity-70">Filme noir</div>
-                </div>
-                <div class="post-theme-sunset border border-current p-3 text-center transition-all hover:scale-105">
-                    <div class="font-bold">Sunset</div>
-                    <div class="text-xs opacity-70">Laranja/Amarelo</div>
-                </div>
-                <div class="post-theme-ocean border border-current p-3 text-center transition-all hover:scale-105">
-                    <div class="font-bold">Ocean</div>
-                    <div class="text-xs opacity-70">Azul marinho</div>
-                </div>
-            </div>
-        </section>
-
-        <section>
-            <h2 class="text-2xl font-bold mb-4 border-b border-current pb-2">Como Usar</h2>
-            <div class="space-y-3">
-                <div class="border border-current p-4">
-                    <h3 class="font-bold mb-2">1. Criar Conta</h3>
-                    <p class="text-sm opacity-70">Clique em "Cadastrar Pseudônimo" no menu. Escolha seu username e senha.</p>
-                </div>
-                <div class="border border-current p-4">
-                    <h3 class="font-bold mb-2">2. Criar Post</h3>
-                    <p class="text-sm opacity-70">Clique "+ Novo Post". Escolha título, tema, fonte e tipo de teaser. Escreva em Markdown.</p>
-                </div>
-                <div class="border border-current p-4">
-                    <h3 class="font-bold mb-2">3. Salvar</h3>
-                    <p class="text-sm opacity-70">Ctrl+S ou clique "Salvar Post". Auto-save funciona automaticamente a cada 1s.</p>
-                </div>
-                <div class="border border-current p-4">
-                    <h3 class="font-bold mb-2">4. Buscar</h3>
-                    <p class="text-sm opacity-70">Digite no search bar ou clique em tags para filtrar posts. ESC para limpar.</p>
-                </div>
-            </div>
-        </section>
-
-        <section class="border-t border-current pt-8">
-            <h2 class="text-2xl font-bold mb-4">Filosofia</h2>
-            <blockquote class="border-l-4 border-current pl-4 italic opacity-80">
-                "No espaço cibernético, a poesia não precisa de papel.
-                Ela flutua entre bits e bytes, carregando consigo a mesma melancolia
-                romântica que sempre carregou — só que agora com um glow neon."
-            </blockquote>
-        </section>
+        
 
         <section class="text-center py-8">
-            <div class="text-6xl mb-4">🧴</div>
-            <p class="opacity-70 text-sm">
-                Desenvolvido com Claude Code (Anthropic)<br>
-                Open source • MIT License
-            </p>
+            <!-- <div class="text-6xl mb-4"></div> -->
+            
             <div class="mt-4">
                 <a href="{{ url_for('index') }}" class="px-6 py-2 border border-current hover:bg-current hover:text-inverse inline-block">
                     ← Voltar ao Blog

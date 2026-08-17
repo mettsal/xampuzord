@@ -95,12 +95,16 @@ body.dark {
 /* Hover invertido dos botões: o padrão `hover:bg-current hover:text-inverse`
    não funciona — text-inverse nunca existiu no Tailwind e currentColor
    acompanharia a nova cor do texto (fundo e texto iguais = invisível).
-   Estas regras dão o efeito pretendido usando as variáveis de tema. */
+   Estas regras dão o efeito pretendido usando as variáveis de tema.
+   O !important é necessário porque o Tailwind Play CDN regenera o
+   `hover:bg-current` (background-color: currentColor) a cada mutação do DOM
+   e o re-anexa DEPOIS deste stylesheet — sem ele, o botão some no hover/toque
+   (fundo currentColor + texto var(--bg-color) = mesma cor). */
 .hover\:bg-current:hover {
-    background-color: var(--text-color);
+    background-color: var(--text-color) !important;
 }
 .hover\:text-inverse:hover {
-    color: var(--bg-color);
+    color: var(--bg-color) !important;
 }
 
 @keyframes logo-pulse {
@@ -221,6 +225,14 @@ body.dark {
 /* Controles de zoom do poema */
 .poem-zoom-controls button {
     min-width: 2rem;
+}
+
+/* Comentários e depoimentos: texto puro do usuário, quebras de linha preservadas */
+.comment-body {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
 }
 
 #zoomLevel {

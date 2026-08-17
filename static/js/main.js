@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="absolute inset-0 flex flex-col justify-between p-4 overlay-content">
                     <div></div>
                     <h3 class="text-center text-lg glowy-title">${post.title}</h3>
-                    <div class="flex flex-wrap gap-2 justify-center">
+                    <div class="hidden md:flex flex-wrap gap-2 justify-center">
                         ${tagsHtml}
                     </div>
                 </div>
@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         @${post.author} • ${new Date(post.created_at).toLocaleDateString('pt-BR')}
                     </div>
                     <div class="text-sm opacity-50 italic mb-3">Post sem preview</div>
-                    <div class="flex flex-wrap gap-2 mb-2">
+                    <div class="hidden md:flex flex-wrap gap-2 mb-2">
                         ${tagsHtml}
                     </div>
                     <div class="text-xs opacity-50">
@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="absolute bottom-4 left-4 right-4">
                         <h3 class="text-left text-sm glowy-title mb-2">${post.title}</h3>
-                        <div class="flex flex-wrap gap-1">
+                        <div class="hidden md:flex flex-wrap gap-1">
                             ${tagsHtml}
                         </div>
                     </div>

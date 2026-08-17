@@ -38,6 +38,56 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Curtida anônima: toggle por visitante (UUID no localStorage). O estado
+    // "eu curti" fica no navegador; o contador vem do servidor.
+    // getCsrfToken() é global, definida em main.js (carregado antes).
+    const likeBtn = document.getElementById('likeBtn');
+    if (likeBtn) {
+        let visitorId = localStorage.getItem('visitorId');
+        if (!visitorId) {
+            visitorId = (window.crypto && crypto.randomUUID)
+                ? crypto.randomUUID()
+                : String(Date.now()) + '-' + Math.random();
+            localStorage.setItem('visitorId', visitorId);
+        }
+        const postId = likeBtn.dataset.postId;
+        const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '{}');
+        const likeIcon = document.getElementById('likeIcon');
+        const likeCount = document.getElementById('likeCount');
+
+        const renderLike = (liked, count) => {
+            likeIcon.textContent = liked ? '♥' : '♡';
+            likeBtn.setAttribute('aria-pressed', liked);
+            if (count !== undefined) likeCount.textContent = count;
+        };
+        renderLike(!!likedPosts[postId]);
+
+        likeBtn.addEventListener('click', async () => {
+            try {
+                const res = await fetch(`/post/${postId}/like`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({visitor_id: visitorId})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (data.liked) {
+                        likedPosts[postId] = true;
+                    } else {
+                        delete likedPosts[postId];
+                    }
+                    localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
+                    renderLike(data.liked, data.likes);
+                }
+            } catch (e) {
+                console.error('Like error:', e);
+            }
+        });
+    }
+
     const MIN_ZOOM = 0.5;
     const MAX_ZOOM = 3;
     const FIT_FLOOR = 0.55; // abaixo disso o texto fica ilegível; mantém scroll horizontal

@@ -52,6 +52,53 @@
         {{ post.body_html|safe }}
     </div>
 
+    <!-- Curtida anônima -->
+    <div class="mt-8 flex items-center gap-3">
+        <button id="likeBtn" data-post-id="{{ post.id }}" aria-pressed="false"
+                aria-label="Curtir este post"
+                class="px-4 py-2 border border-current hover:bg-current hover:text-inverse">
+            <span id="likeIcon">♡</span> <span id="likeCount">{{ post.likes|length }}</span>
+        </button>
+    </div>
+
+    <!-- Comentários -->
+    <section class="mt-8 pt-8 border-t border-current">
+        <h2 class="text-xl font-bold mb-4">Comentários ({{ post.comments|length }})</h2>
+        {% for c in post.comments %}
+        <div class="mb-4 p-3 border border-current">
+            <div class="text-sm opacity-70 mb-1">@{{ c.author.username }} • {{ c.created_at.strftime('%d/%m/%Y') }}</div>
+            <div class="comment-body">{{ c.body }}</div>
+            {% if current_user.is_authenticated and current_user.is_admin %}
+            <form method="POST" action="{{ url_for('delete_comment', comment_id=c.id) }}"
+                  onsubmit="return confirm('Deletar este comentário?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="mt-2 text-xs px-2 py-1 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors">
+                    Deletar
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% else %}
+        <p class="opacity-70 mb-4 italic">Nenhum comentário ainda.</p>
+        {% endfor %}
+
+        {% if current_user.is_authenticated %}
+        <form method="POST" action="{{ url_for('add_comment', post_id=post.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <textarea name="body" required maxlength="2000" placeholder="Deixe um comentário..."
+                      class="w-full h-24 p-3 bg-transparent border border-current"></textarea>
+            <button type="submit" class="mt-2 px-4 py-2 border border-current hover:bg-current hover:text-inverse">
+                Comentar
+            </button>
+        </form>
+        {% else %}
+        <p class="opacity-70">
+            <a href="{{ url_for('login') }}" class="underline">Entre</a> ou
+            <a href="{{ url_for('register') }}" class="underline">cadastre um pseudônimo</a> para comentar.
+        </p>
+        {% endif %}
+    </section>
+
     {% if current_user.is_authenticated and current_user.is_admin %}
     <div class="mt-8 pt-8 border-t border-current">
         <div class="flex gap-4">
@@ -70,5 +117,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/post-view.js') }}?v=20260807b"></script>
+<script src="{{ url_for('static', filename='js/post-view.js') }}?v=20260808"></script>
 {% endblock %}

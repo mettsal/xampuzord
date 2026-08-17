@@ -27,9 +27,9 @@ source xenv/bin/activate
 pip install -r requirements.txt
 
 # Banco de dados (SQLite em instance/xampuparaossos.db)
-flask init-db                  # criar tabelas
-flask seed-db                  # dados de exemplo (cria admin/admin123)
-python migrate_add_post_theme.py  # migração legada, só se o banco for antigo
+flask init-db                  # criar tabelas (create_all — seguro repetir; rode a cada deploy que adicionar modelos)
+flask seed-db                  # dados de exemplo
+python tools/migrate_add_post_theme.py  # migração legada, só se o banco for antigo
 
 # Rodar (http://localhost:5000)
 python run.py                  # debug via FLASK_DEBUG=True no .env
@@ -60,9 +60,9 @@ afetado no navegador (desktop **e** mobile, ver seção UX abaixo).
 app.py                    # App Flask inteira: modelos, rotas, CLI (arquivo único)
 config.py                 # Config por ambiente (dev/prod/testing) — USADO por app.py
 run.py                    # Entry point
-tools/import_posts.py     # Importador do acervo poesia/ (docstring explica regras)
+tools/                    # import_posts.py (acervo poesia/) + migrate_add_post_theme.py (legada)
 templates/                # Jinja2: base, index, post, editor, login, register,
-                          # admin, sobre, 404, 500
+                          # admin, sobre, depoimentos, 404, 500
 static/css/style.css      # Estilos + 9 temas de post (.post-theme-{nome})
 static/js/main.js         # Nav, tema global, busca, infinite scroll, delete
 static/js/editor.js       # Editor: preview, auto-save, upload de teaser
@@ -71,7 +71,6 @@ static/uploads/teasers/   # Uploads de usuários (UUID no nome)
 instance/                 # SQLite + backups de banco
 poesia/                   # Acervo de textos (fonte do importador) — conteúdo, não código
 cf-ddns.sh                # DDNS Cloudflare p/ self-hosting (placeholders, não secrets)
-xampuzord                 # Symlink p/ config nginx da máquina do autor — ignorar
 ```
 
 ### Modelo de dados (app.py)
@@ -81,6 +80,9 @@ xampuzord                 # Symlink p/ config nginx da máquina do autor — ign
 - `Tag`: agregado global (name, type, count) — `process_tags()` incrementa,
   `decrement_tags()` decrementa ao editar/deletar. **Manter o count correto**
   ao mexer em tags.
+- `Like`: curtida anônima (post_id + visitor_id, UNIQUE) — toggle sem login
+- `Comment` / `Testimonial`: texto de usuário logado (escapado no Jinja);
+  delete só admin. Os três têm cascade: morrem junto com o post.
 
 ### Fluxo de criação de post
 1. Editor converte Markdown → HTML no cliente (marked.js)
@@ -100,10 +102,6 @@ xampuzord                 # Symlink p/ config nginx da máquina do autor — ign
   inglês. Comentários em PT-BR quando explicam decisões (padrão atual do app.py).
 - **Mudanças mínimas**: corrija o que foi pedido, sem refatorações oportunistas.
   Três linhas parecidas são melhores que uma abstração prematura.
-- **Arquivos `*-backup.*`**: snapshots históricos. Nunca editar nem referenciar;
-  candidatos a remoção futura.
-- **`templates/complete.html` e `templates/main.html`**: órfãos, não são
-  renderizados por nenhuma rota. Não usar como referência de padrão.
 - **Sem placeholders**: nunca deixar `// resto igual` — entregue o arquivo completo.
 - Ao mudar comportamento documentado aqui, no README ou no CLAUDE.md,
   **atualize os três** na mesma mudança.
@@ -175,48 +173,32 @@ atualize esta lista.
     estilo). Gerar CSS estático no build de deploy.
 
 ### P2 — Higiene do repositório
-12. **Arquivos mortos**: `templates/complete.html`, `templates/main.html`,
-    `index-backup.html`, `editor-backup.html`, `*-backup.js/css`. Remover
-    (git preserva o histórico).
-13. **`xampuzord`**: symlink p/ `/etc/nginx/...` da máquina do autor — quebrado
-    em qualquer outro clone. Mover a config para dentro do repo (ex: `deploy/`)
-    e referenciá-la.
-14. **Docs desatualizadas**: README e CLAUDE.md ainda dizem "config.py não é
-    usado" e "tag count não decrementa" — ambos já corrigidos no código.
-    Sincronizar.
-15. **Sem headers de segurança** (CSP, X-Frame-Options) e sem CAPTCHA no
+12. **Sem headers de segurança** (CSP, X-Frame-Options) e sem CAPTCHA no
     registro — já listados no SECURITY.md como TODO.
 
 ## Deployment
 
-Self-hosting (Thinkpad) com Cloudflare → Nginx → Gunicorn (systemd). Ver
-SECURITY.md para o passo a passo completo.
-
-**Arquitetura real em produção** (após o incidente de 2026-08-07):
-
-```
-navegador → Cloudflare → nginx :443 (/etc/nginx/sites-enabled/xampuzord)
-  location /static/ → alias direto p/ static/ do repo (expires 30d)
-  location /        → proxy_pass http://unix:/run/xampuzord/xampuzord.sock
-                            └─ xampuzord.service (systemd) → gunicorn app:app
-```
+Self-hosting com Cloudflare → Nginx → Gunicorn (systemd). Ver SECURITY.md
+para o passo a passo completo. A topologia exata (caminhos de socket, nome do
+serviço, estrutura de diretórios do host) fica **fora do repo** de propósito —
+o runbook detalhado vive na máquina host, não no GitHub público.
 
 **Fluxo de deploy de mudanças**:
 ```bash
-sudo systemctl restart xampuzord   # recarrega Python + templates
-# bump do ?v= em base.html se mudou CSS/JS; Ctrl+F5 / Purge no Cloudflare
+sudo systemctl restart <serviço-do-app>   # recarrega Python + templates
+# bump do ?v= em base.html se mudou CSS/JS; Ctrl+F5 / Purge no CDN
 ```
 
-**Invariantes duras (lição do incidente)**:
+**Invariantes duras (lição do incidente de 2026-08-07, ver CHANGELOG)**:
 - O systemd é o **único** dono do app. **Nunca** subir gunicorn manual em
-  porta de produção (`-b 127.0.0.1:5000`) — uma instância órfã assim serviu
-  código velho por semanas enquanto reiniciávamos o serviço errado.
-- Se o site "não atualiza", comparar as pontas antes de culpar cache:
-  `curl localhost:5000`, `curl --unix-socket /run/xampuzord/xampuzord.sock`,
-  `curl https://www.xampuparaossos.com.br` — a que diverge é a culpada.
+  porta de produção — uma instância órfã assim serviu código velho por
+  semanas enquanto reiniciávamos o serviço errado.
+- Se o site "não atualiza", comparar as pontas antes de culpar cache: a
+  instância direta, o socket do serviço e a URL pública — a que diverge é a
+  culpada.
 - `.env` com `SECRET_KEY` forte, `FLASK_ENV=production`, `DATABASE_URL`
 - PostgreSQL em produção (SQLite é só dev)
 - `cf-ddns.sh` roda via cron na máquina host (contém placeholders, não secrets)
 - Nginx serve `/static/` com `expires 30d`: ao mudar CSS/JS, **bump do `?v=`**
   no link/script do `base.html` (padrão: data, ex `?v=20260807`) para furar o
-  cache do navegador/Cloudflare.
+  cache do navegador/CDN.

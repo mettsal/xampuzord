@@ -1,5 +1,63 @@
 # Changelog - Xampu Para Ossos
 
+## [Unreleased] - 2026-08-16
+
+### ✅ Fixes
+
+#### Botões "invisíveis" no toque/hover (ex: toggle de mosaico no mobile)
+- Causa: o Tailwind Play CDN regenera `hover:bg-current`
+  (`background-color: currentColor`) a cada mutação do DOM e o re-anexa
+  **depois** do nosso `style.css`; combinado com a nossa regra
+  `hover:text-inverse` (cor = `var(--bg-color)`), fundo e texto ficavam da
+  mesma cor no hover "grudento" do toque mobile — o botão sumia visualmente
+  mas continuava clicável
+- Fix: `!important` nas duas regras de hover invertido em `style.css`
+  (corrige todos os botões `hover:bg-current hover:text-inverse` de uma vez)
+
+#### Tags dos cards escondidas no mobile
+- Pills de tag dos cards (3 tipos de teaser, em `index.html` e no
+  `createPostCard` do `main.js`) agora usam `hidden md:flex` — mobile mostra
+  só o conteúdo; desktop inalterado
+- Bump de cache `?v=20260816` em `base.html` (style.css + main.js)
+
+### 🧹 Higiene do repositório (organização pré-commit)
+- Removidos arquivos mortos: `*-backup.js/css/html`, `templates/complete.html`,
+  `templates/main.html`, imagens de referência duplicadas em `static/images/`
+  (git preserva o histórico)
+- `migrate_add_post_theme.py` movido para `tools/`
+- `.claude/` adicionado ao `.gitignore`
+- Docs sincronizadas (README/CLAUDE/AGENTS): listas antigas de "issues
+  conhecidos" substituídas por ponteiro para o backlog vivo no AGENTS.md;
+  itens P2 12-14 resolvidos e removidos
+
+## [Unreleased] - 2026-08-08
+
+### ✅ Features
+
+#### Interações passivas: curtidas, comentários e depoimentos
+- **Curtidas anônimas**: botão ♡/♥ na página do post; toggle por visitante
+  (UUID em localStorage, constraint `UNIQUE(post_id, visitor_id)` no banco);
+  contador atualiza sem reload; rate limit 30/min
+- **Comentários**: só usuários logados; publicam direto (decisão de design:
+  sem fila de moderação — admin deleta depois via botão inline); texto puro
+  escapado pelo Jinja (sem XSS), quebras de linha preservadas; rate limit 10/h
+- **Depoimentos**: página `/depoimentos` (guestbook) para usuários logados;
+  link novo na navbar no lugar do "CATEGORIAS" morto (`href="#"`)
+- Novos modelos: `Like`, `Comment`, `Testimonial` (cascade: morrem com o post)
+- **Deploy exige `flask init-db` antes do restart** (cria as tabelas novas)
+
+#### Conta admin oficial: `xampuzordmin`
+- Seed (`flask seed-db`) e docs agora criam o admin `xampuzordmin` (senha
+  padrão no código) no lugar de `admin/admin123`; conta de produção renomeada
+- **Nota**: a senha do seed é pública por estar no repo — produção deve usar
+  senha própria via `flask reset-admin-password`
+
+#### Higiene do repositório (para portfólio público)
+- `ref/`, `refs/` e o symlink `xampuzord` saíram do versionamento
+  (`.gitignore`); arquivos locais preservados
+- Docs sanitizadas: caminhos reais da infra (socket, sites-enabled) removidos
+  de AGENTS.md/CHANGELOG — o runbook detalhado vive na máquina host
+
 ## [Unreleased] - 2026-08-07
 
 ### ✅ Features e mudanças de comportamento
@@ -35,21 +93,20 @@
 `systemctl restart xampuzord` e Purge Everything no Cloudflare.
 
 **Causa raiz (dupla)**:
-1. Existia uma **instância órfã do gunicorn** (PID 726, iniciada manualmente
-   em 21/jul fora do systemd) escutando em `127.0.0.1:5000`, com código e
-   templates antigos em memória.
-2. O nginx ativo (`/etc/nginx/sites-enabled/xampuzord`, arquivo real) fazia
-   `proxy_pass http://127.0.0.1:5000` — ou seja, **toda a produção era servida
-   pela órfã**. O serviço systemd (socket `/run/xampuzord/xampuzord.sock`)
+1. Existia uma **instância órfã do gunicorn** (iniciada manualmente, fora do
+   systemd) escutando em `127.0.0.1:5000`, com código e templates antigos em
+   memória.
+2. A config ativa do nginx fazia `proxy_pass` para essa porta — ou seja,
+   **toda a produção era servida pela órfã**. O serviço systemd (unix socket)
    estava correto, mas fora do caminho do tráfego.
 
-Agravante: a config versionada no repo (symlink `xampuzord` →
-`sites-available`) apontava um terceiro caminho (`/run/xampuzord.sock`,
-inexistente). Três fontes divergentes de verdade.
+Agravante: a config do nginx versionada no repo apontava um terceiro caminho
+(um socket inexistente). Três fontes divergentes de verdade.
 
-**Resolução**: `proxy_pass` do `sites-enabled` repontado para o socket do
-systemd, `nginx -t` + reload, órfã morta. Verificado por curl comparando
-marcações (logo novo, `gridToggle`) em cada ponta: porta 5000, socket e HTTPS.
+**Resolução**: `proxy_pass` repontado para o socket do systemd, validação +
+reload do nginx, órfã encerrada. Verificado comparando as respostas de cada
+ponta (porta direta, socket do serviço, URL pública) — a que divergia era a
+culpada.
 
 **Lição**: um único dono para o app (systemd), uma única fonte da config
 nginx (repo), e nunca subir gunicorn manual "só para testar" em porta de

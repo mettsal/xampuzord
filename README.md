@@ -54,12 +54,12 @@ pip install -r requirements.txt
 4. Inicialize o banco de dados:
 ```bash
 flask init-db
-flask seed-db  # Opcional: dados de exemplo (cria admin/admin123)
+flask seed-db  # Opcional: dados de exemplo (cria o admin padrão do seed)
 ```
 
 5. **IMPORTANTE - Migração**: Se estiver atualizando de versão antiga, rode:
 ```bash
-python migrate_add_post_theme.py
+python tools/migrate_add_post_theme.py
 ```
 
 6. Execute a aplicação:
@@ -102,17 +102,19 @@ flask init-db
 ```bash
 flask seed-db
 ```
-Cria admin (admin/admin123) + 5 usuários + 20 posts de exemplo.
+Cria o admin padrão do seed + 5 usuários + 20 posts de exemplo.
 
 ## Estrutura do Projeto
 
 ```
 boneshampoo/
 ├── app.py                        # Aplicação Flask principal
-├── config.py                     # Configurações (não usado atualmente)
+├── config.py                     # Config por ambiente (dev/prod/testing)
 ├── run.py                        # Entry point
 ├── requirements.txt              # Dependências Python
-├── migrate_add_post_theme.py    # Script de migração para post_theme
+├── tools/                        # Scripts utilitários
+│   ├── import_posts.py          # Importador do acervo poesia/
+│   └── migrate_add_post_theme.py # Migração legada (post_theme)
 ├── CLAUDE.md                     # Guia para Claude Code
 ├── templates/                    # Templates Jinja2
 │   ├── base.html                # Template base com navbar
@@ -154,6 +156,11 @@ boneshampoo/
 - `GET /register` - Página de registro
 - `POST /register` - Criar novo usuário
 - `GET /logout` - Logout do usuário
+- `POST /post/<id>/like` - Toggle de curtida anônima (JSON: visitor_id)
+- `POST /post/<id>/comment` - Comentar (requer login)
+- `POST /comment/<id>/delete` - Deletar comentário (admin)
+- `GET/POST /depoimentos` - Guestbook de depoimentos (POST requer login)
+- `POST /depoimento/<id>/delete` - Deletar depoimento (admin)
 
 ## Temas Disponíveis
 
@@ -239,10 +246,9 @@ git push heroku main
 
 ## Issues Conhecidos
 
-1. Tag count não decrementa ao deletar post
-2. Search bar na navbar não persiste após navegação
-3. Infinite scroll não detecta fim dos posts (continua tentando)
-4. config.py existe mas não é usado (configurações hardcoded em app.py)
+Os itens antigos desta lista foram corrigidos. O backlog vivo de fraquezas e
+foco de trabalho fica no [AGENTS.md](AGENTS.md), seção "Fraquezas Conhecidas &
+Foco de Trabalho".
 
 ## Créditos
 

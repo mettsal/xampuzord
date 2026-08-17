@@ -38,11 +38,11 @@ python run.py
 # Inicializar tabelas
 flask init-db
 
-# Popular com posts de exemplo (cria admin/admin123)
+# Popular com posts de exemplo
 flask seed-db
 
 # Migração: adicionar post_theme (se atualizando de versão antiga)
-python migrate_add_post_theme.py
+python tools/migrate_add_post_theme.py
 
 # Banco SQLite: instance/xampuparaossos.db
 ```
@@ -153,6 +153,11 @@ GET  /api/tags                  → Autocomplete tags (top 50)
 POST /api/user/settings         → Salvar preferências user
 POST /login                     → Login (rate: 10/min - anti brute force)
 POST /register                  → Registro (rate: 5/hora - anti spam)
+POST /post/<id>/like            → Toggle curtida anônima (visitor_id, rate: 30/min)
+POST /post/<id>/comment         → Comentar (requer login, rate: 10/hora)
+POST /comment/<id>/delete       → Deletar comentário (admin)
+GET|POST /depoimentos           → Guestbook (POST requer login, rate: 10/hora)
+POST /depoimento/<id>/delete    → Deletar depoimento (admin)
 ```
 
 ### Security Notes
@@ -177,7 +182,7 @@ POST /register                  → Registro (rate: 5/hora - anti spam)
 
 - **Regular User**: Criar/editar/deletar próprios posts
 - **Admin** (`is_admin=True`): Acesso a `/admin`, pode editar/deletar qualquer post
-- Admin padrão seed: `admin / admin123`
+- Admin padrão seed: usuário `xampuzordmin` (senha definida no seed em app.py — trocar em produção com `flask reset-admin-password`)
 
 ### Frontend Architecture
 
@@ -206,11 +211,9 @@ POST /register                  → Registro (rate: 5/hora - anti spam)
 
 ### Database Schema Quirk
 
-Tag counting: Quando post é criado, atualiza `Tag.count`. **Atenção**: Deletar post NÃO decrementa count (TODO conhecido).
-
-### Backups e Versionamento
-
-Arquivos `-backup` presentes (editor-backup.js, style-backup.css, etc.) são snapshots de funcionalidades antigas. **Não usar** - referência apenas.
+Tag counting: `process_tags()` incrementa ao criar/editar e `decrement_tags()`
+decrementa ao editar/deletar (linhas que zeram são removidas). **Manter o
+count correto** ao mexer em tags.
 
 ### Known Issues / TODO
 
@@ -226,18 +229,17 @@ Arquivos `-backup` presentes (editor-backup.js, style-backup.css, etc.) são sna
 - ✅ CLI tools (reset password, list users, make admin)
 
 ❌ **Ainda pendente:**
-1. Tag count não decrementa ao deletar post
-2. Tag autocomplete UI (API existe mas não conectado)
-3. Infinite scroll não detecta fim dos posts
-4. config.py não é usado (app.py tem configs hardcoded)
-5. CAPTCHA no registro (futuro)
+
+O backlog vivo de fraquezas e foco de trabalho fica no AGENTS.md, seção
+"Fraquezas Conhecidas & Foco de Trabalho" (os 4 itens antigos desta lista
+foram corrigidos; CAPTCHA no registro segue pendente, ver SECURITY.md).
 
 ### Deployment Considerations
 
 **Arquivos de Configuração:**
 - `.env.example` - Template de variáveis de ambiente
 - `SECURITY.md` - Guia completo de segurança (16 páginas)
-- `migrate_add_post_theme.py` - Script de migração para post_theme
+- `tools/migrate_add_post_theme.py` - Script de migração para post_theme
 
 **Comandos de Deploy:**
 ```bash
@@ -249,7 +251,7 @@ cp .env.example .env
 # Editar .env com SECRET_KEY forte e DATABASE_URL
 
 # Migrar database se necessário
-python migrate_add_post_theme.py
+python tools/migrate_add_post_theme.py
 
 # Rodar com gunicorn (produção)
 gunicorn -w 4 -b 0.0.0.0:5000 app:app
