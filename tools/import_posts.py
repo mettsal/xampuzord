@@ -66,7 +66,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # Importa os singletons do app (mesmo padrão de run.py e do bloco __main__).
-from app import app, db, Post, User, process_tags, decrement_tags  # noqa: E402
+from app import app, db, Post, User, process_tags, decrement_tags, utcnow  # noqa: E402
 
 CONTENT_EXTENSIONS = {'.txt', '.md', ''}  # '' = sem extensão (acervo tem ~200, todos texto)
 JUNK_NAMES = {'desktop.ini', 'readme', 'readme.txt', 'readme.md', 'readme.txt.txt'}
@@ -362,7 +362,7 @@ def main() -> int:
                     existing.tags = process_tags(', '.join(poem.tag_values))
                     existing.body_html = body_html_for(poem.text)
                     existing.created_at = poem.created_at
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = utcnow()
                 updated += 1
             else:
                 print(f"➕ cria     {poem.rel}  -> '{poem.title}' ({when}){tag_note}{rename_note}")

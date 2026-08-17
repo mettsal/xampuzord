@@ -1,12 +1,12 @@
 <!-- templates/base.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}Xampu Para Ossos{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=20260817">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20260817">
 </head>
@@ -70,6 +70,8 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- Flag p/ main.js: logado salva preferências (tema) no servidor via /api/user/settings -->
+    <script>window.currentUser = {{ 'true' if current_user.is_authenticated else 'false' }};</script>
     <script src="{{ url_for('static', filename='js/main.js') }}?v=20260817"></script>
     {% block scripts %}{% endblock %}
 </body>

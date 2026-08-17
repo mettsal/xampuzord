@@ -176,7 +176,7 @@ WantedBy=multi-user.target
 - [ ] Backup automático de uploads
 - [ ] CDN para static files
 - [ ] Compressão de imagens no upload
-- [ ] Headers de segurança (CSP, X-Frame-Options, etc)
+- [x] Headers de segurança (CSP, X-Frame-Options, etc) — via `security_headers()` no app.py (2026-08-17)
 
 ## 📊 Monitoramento
 

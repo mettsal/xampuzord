@@ -1,0 +1,22 @@
+{
+  "name": "xampuzord",
+  "version": "1.0.0",
+  "description": "Um blog minimalista de poesia digital com estética cyberpunk/K-punk. Interface tipo Instagram grid 3x3, temas customizados por post, editor Markdown, e sistema de teasers.",
+  "scripts": {
+    "build:css": "tailwindcss -i static/css/tailwind.src.css -o static/css/tailwind.css --minify"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mettsal/xampuzord.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mettsal/xampuzord/issues"
+  },
+  "homepage": "https://github.com/mettsal/xampuzord#readme",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

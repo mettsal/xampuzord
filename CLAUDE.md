@@ -65,7 +65,7 @@ flask make-admin
 ### Stack Tecnológico
 - **Backend**: Flask + SQLAlchemy (Python 3.10+)
 - **Database**: SQLite (dev) → PostgreSQL (prod)
-- **Frontend**: Vanilla JS + Tailwind CSS (CDN)
+- **Frontend**: Vanilla JS + Tailwind CSS (estático, build via `npm run build:css`)
 - **Auth**: Flask-Login com Werkzeug password hashing
 - **Security**: Bleach (XSS), Flask-Limiter (rate limiting)
 - **Markdown**: marked.js (client-side parsing)

@@ -2,6 +2,33 @@
 
 ## [Unreleased] - 2026-08-17
 
+### 🧹 Faxina do backlog (P0/P1/P2 — backlog original zerado)
+
+#### P0
+- **Filtro de tags em SQL**: `/api/posts` não carrega mais todos os posts em
+  memória — `ilike` substring case-insensitive sobre o JSON serializado +
+  paginação no banco (seq scan ok nesta escala; FTS se crescer)
+- **`window.currentUser` definido** em `base.html`: o save de preferências
+  (tema) em `/api/user/settings` saiu do código morto
+
+#### P1
+- **Suíte de testes mínima** (`tests/test_smoke.py`, unittest stdlib, 15
+  testes): `sanitize_html`, `process/decrement_tags`, rotas públicas,
+  permissões admin-only, throttle de views, like, comentário, headers, lang
+- **`html lang="pt-BR"`** e mensagens de erro/flash padronizadas em PT-BR
+- **Deprecations zeradas**: `utcnow()` helper (UTC naive, schema inalterado)
+  e `db.get_or_404` / `db.session.get` no lugar de `Query.get*`
+- **Tailwind CSS estático**: Play CDN substituído por build local
+  (`npm run build:css` → `static/css/tailwind.css`, versionado; `node_modules`
+  gitignored). Fim do aviso no console, do flash de estilo e da classe
+  inteira de bugs de cascade do CDN. CSP perdeu a exceção pro CDN do Tailwind
+
+#### P2
+- **Headers de segurança** em toda resposta (`security_headers()`):
+  X-Frame-Options, X-Content-Type-Options, Referrer-Policy e CSP
+  (`'unsafe-inline'` só por causa dos handlers inline; CSP estrita com
+  nonces fica de backlog, junto com o CAPTCHA)
+
 ### ✅ Features
 
 #### Throttle de views por sessão (P1)

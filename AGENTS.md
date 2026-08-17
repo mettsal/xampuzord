@@ -35,6 +35,13 @@ python tools/migrate_add_post_body_md.py  # idem: coluna body_md (fonte Markdown
 # Rodar (http://localhost:5000)
 python run.py                  # debug via FLASK_DEBUG=True no .env
 
+# Testes (unittest, stdlib — sem dependências novas)
+python -m unittest discover -s tests -v
+
+# CSS: rebuild do Tailwind estático após mudar classes em templates/JS
+npm install                  # uma vez (gera node_modules/, gitignored)
+npm run build:css            # gera static/css/tailwind.css (versionado)
+
 # Gestão de usuários
 flask list-users
 flask reset-admin-password
@@ -44,14 +51,17 @@ flask make-admin
 python tools/import_posts.py
 ```
 
-Não há suíte de testes. Valide mudanças rodando o app e exercitando o fluxo
-afetado no navegador (desktop **e** mobile, ver seção UX abaixo).
+Suíte mínima de testes em `tests/test_smoke.py` (unittest, stdlib):
+`python -m unittest discover -s tests`. Além dela, valide mudanças de UI
+rodando o app e exercitando o fluxo afetado no navegador (desktop **e**
+mobile, ver seção UX abaixo).
 
 ## Arquitetura
 
 ### Stack
 - **Backend**: Flask + SQLAlchemy (SQLite em dev, PostgreSQL planejado p/ prod)
-- **Frontend**: Vanilla JS + Tailwind via CDN (`cdn.tailwindcss.com`)
+- **Frontend**: Vanilla JS + Tailwind CSS estático (`static/css/tailwind.css`,
+  build via `npm run build:css` — rode-o ao mudar classes nos templates/JS)
 - **Auth**: Flask-Login + Werkzeug PBKDF2
 - **Segurança**: Bleach (sanitização HTML), Flask-WTF (CSRF), Flask-Limiter (rate limit)
 - **Markdown**: marked.js no cliente — o HTML resultante é sanitizado no backend
@@ -153,30 +163,20 @@ UI pronta:
 ## Fraquezas Conhecidas & Foco de Trabalho
 
 Ordenado por prioridade. Ao corrigir um item, mova-o para o changelog e
-atualize esta lista.
-
-### P0 — Experiência quebrada ou enganosa
-1. **Filtro por tags do backend é O(N) em Python**: `/api/posts` com `tags`
-   carrega TODOS os posts e fatia em memória (app.py:~245). Funciona hoje,
-   escala mal. Migrar para filtro SQL (ou FTS) ao crescer.
-2. **`window.currentUser` nunca é definido**: o save de preferências em
-   `/api/user/settings` (main.js:~50) é código morto. Definir a flag no
-   `base.html` ou remover o caminho morto.
+atualize esta lista. O backlog original (15 itens) foi zerado entre
+2026-08-07 e 2026-08-17 — ver CHANGELOG. O que resta:
 
 ### P1 — Profissionalização
-3. **Sem testes**: zero cobertura. Mínimo viável: smoke tests das rotas
-   (Flask test client) + teste de `sanitize_html` e `process/decrement_tags`.
-4. **`html lang="en"`** em `base.html` com UI em PT-BR — acessibilidade/SEO.
-5. **Mensagens misturadas PT/EN**: "Username already exists", "You can only
-   edit your own posts" etc. Padronizar PT-BR.
-6. **Deprecations**: `datetime.utcnow` e `Query.get()` geram warnings em
-   SQLAlchemy 2 / Python 3.12+.
-7. **Tailwind Play CDN** não é para produção (aviso no console, flash de
-   estilo). Gerar CSS estático no build de deploy.
+1. **CAPTCHA no registro**: registro aberto segue vulnerável a bots
+   (ver SECURITY.md).
+2. **CSP estrita**: a CSP atual usa `'unsafe-inline'` por causa dos handlers
+   inline dos templates. Migrar para nonces/hashes quando valer a pena.
+3. **Filtro de tags é seq scan** (`ilike` sobre o JSON serializado): ok nesta
+   escala; se o acervo crescer muito, FTS ou tabela de junção.
 
 ### P2 — Higiene do repositório
-8. **Sem headers de segurança** (CSP, X-Frame-Options) e sem CAPTCHA no
-   registro — já listados no SECURITY.md como TODO.
+4. **Cobertura de testes**: a suíte mínima existe (`tests/test_smoke.py`);
+   expandir conforme novas features entrarem.
 
 ## Deployment
 
@@ -187,6 +187,7 @@ o runbook detalhado vive na máquina host, não no GitHub público.
 
 **Fluxo de deploy de mudanças**:
 ```bash
+# se mudaram classes Tailwind nos templates/JS: npm run build:css (e commite o CSS)
 sudo systemctl restart <serviço-do-app>   # recarrega Python + templates
 # bump do ?v= em base.html se mudou CSS/JS; Ctrl+F5 / Purge no CDN
 ```

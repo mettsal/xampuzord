@@ -105,6 +105,23 @@ flask seed-db
 ```
 Cria o admin padrão do seed + 5 usuários + 20 posts de exemplo.
 
+### Testes
+
+```bash
+python -m unittest discover -s tests -v
+```
+Suíte mínima (stdlib, sem dependências): `sanitize_html`, contagem de tags,
+smoke das rotas, permissões, throttle de views e headers de segurança.
+
+### CSS (Tailwind estático)
+
+O Tailwind é compilado localmente (sem Play CDN). Ao mudar classes nos
+templates ou JS:
+```bash
+npm install        # uma vez
+npm run build:css  # regenera static/css/tailwind.css (versionado)
+```
+
 ## Estrutura do Projeto
 
 ```

@@ -9,7 +9,7 @@ from werkzeug.utils import secure_filename
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy.exc import IntegrityError
 from PIL import Image
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import bleach
 import os
@@ -57,6 +57,11 @@ limiter = Limiter(
     storage_uri="memory://"
 )
 
+def utcnow():
+    """UTC naive: mesmo valor do deprecado datetime.utcnow(), sem mudar
+    o schema — as colunas DateTime do SQLite seguem naive."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
 # ============= MODELS =============
 
 class User(UserMixin, db.Model):
@@ -67,7 +72,7 @@ class User(UserMixin, db.Model):
     settings = db.Column(db.JSON, default=lambda: {'font': 'Consolas', 'theme': 'light'})
     posts = db.relationship('Post', backref='author', lazy=True)
     is_admin = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -82,8 +87,8 @@ class Post(db.Model):
     # Fonte Markdown do post (o que o autor digitou no editor). NULL em posts
     # legados/importados — o editor cai no fallback body_html nesses casos.
     body_md = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
     tags = db.Column(db.JSON, default=list)
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     views = db.Column(db.Integer, default=0)
@@ -122,7 +127,7 @@ class Like(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
     visitor_id = db.Column(db.String(36), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     __table_args__ = (db.UniqueConstraint('post_id', 'visitor_id'),)
 
 class Comment(db.Model):
@@ -131,7 +136,7 @@ class Comment(db.Model):
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     body = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     author = db.relationship('User', backref='comments')
 
 class Testimonial(db.Model):
@@ -139,14 +144,14 @@ class Testimonial(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     body = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     author = db.relationship('User', backref='testimonials')
 
 # ============= HELPERS =============
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 def sanitize_html(html_content):
     """Sanitize HTML content to prevent XSS and auto-wrap in <pre><code>"""
@@ -270,31 +275,26 @@ def api_posts():
         tags_filter = []
     
     query = Post.query
-    
-    # Filter by tags if provided
+
+    # Filter by tags if provided. Substring case-insensitive sobre o JSON
+    # serializado ("ciber" casa com "cybernetic", como a busca antiga do
+    # cliente) — o filtro e a paginação acontecem no banco, não mais O(N)
+    # em Python. Seq scan aceitável nesta escala; se crescer, FTS.
     if tags_filter:
-        # Substring case-insensitive: "ciber" casa com "cybernetic", como a
-        # busca que o usuário já conhecia no cliente. Ainda é O(N) em Python
-        # (tags vivem numa coluna JSON) — migrar para filtro SQL ao crescer.
         wanted = [str(t).lower() for t in tags_filter]
-        posts = []
-        all_posts = query.order_by(Post.created_at.desc()).all()
-        for post in all_posts:
-            post_tags = [str(t.get('value', '')).lower() for t in post.tags]
-            if any(q in pt for q in wanted for pt in post_tags):
-                posts.append(post)
-        posts = posts[(page-1)*9:page*9]
-    else:
-        posts = query.order_by(Post.created_at.desc()).paginate(
-            page=page, per_page=9, error_out=False
-        ).items
-    
+        conditions = [db.cast(Post.tags, db.String).ilike(f'%{q}%') for q in wanted]
+        query = query.filter(db.or_(*conditions))
+
+    posts = query.order_by(Post.created_at.desc()).paginate(
+        page=page, per_page=9, error_out=False
+    ).items
+
     return jsonify([post.to_dict() for post in posts])
 
 @app.route('/post/<int:post_id>')
 def view_post(post_id):
     """View single post"""
-    post = Post.query.get_or_404(post_id)
+    post = db.get_or_404(Post, post_id)
     # 1 view por post por sessão: refresh, bots sem cookie e o próprio autor
     # relendo não inflam o contador. A lista fica no cookie de sessão
     # assinado (~4KB), então guardamos só os últimos 100 ids.
@@ -355,7 +355,7 @@ def new_post():
 @login_required
 def edit_post(post_id):
     """Edit existing post"""
-    post = Post.query.get_or_404(post_id)
+    post = db.get_or_404(Post, post_id)
     
     # Apenas admins editam (usuário comum é read-only, inclusive os próprios posts)
     if not current_user.is_admin:
@@ -377,7 +377,7 @@ def edit_post(post_id):
         post.teaser_image = data.get('teaser_image', post.teaser_image)
         post.teaser_type = data.get('teaser_type', post.teaser_type)
         post.post_theme = data.get('post_theme', post.post_theme)
-        post.updated_at = datetime.utcnow()
+        post.updated_at = utcnow()
         
         db.session.commit()
         
@@ -391,7 +391,7 @@ def edit_post(post_id):
 @login_required
 def delete_post(post_id):
     """Delete existing post"""
-    post = Post.query.get_or_404(post_id)
+    post = db.get_or_404(Post, post_id)
 
     # Apenas admins deletam (usuário comum é read-only, inclusive os próprios posts)
     if not current_user.is_admin:
@@ -417,7 +417,7 @@ def delete_post(post_id):
     if request.is_json:
         return jsonify({'success': True})
 
-    flash('Post deleted successfully')
+    flash('Post deletado com sucesso')
     return redirect(url_for('index'))
 
 # ============= INTERAÇÕES PASSIVAS (curtir / comentar / depoimentos) =============
@@ -426,7 +426,7 @@ def delete_post(post_id):
 @limiter.limit("30 per minute")  # Curtida anônima: limite por IP contra flood
 def like_post(post_id):
     """Toggle de curtida anônima (visitor_id = UUID no localStorage do visitante)"""
-    post = Post.query.get_or_404(post_id)
+    post = db.get_or_404(Post, post_id)
     data = request.get_json(silent=True) or {}
     visitor_id = str(data.get('visitor_id', ''))[:36]
     if not visitor_id:
@@ -449,7 +449,7 @@ def like_post(post_id):
 @limiter.limit("10 per hour")  # Comentário exige conta; limite contra spam
 def add_comment(post_id):
     """Add comment to post (publica direto; admin deleta depois se preciso)"""
-    post = Post.query.get_or_404(post_id)
+    post = db.get_or_404(Post, post_id)
     body = (request.form.get('body') or '').strip()[:2000]
     if not body:
         flash('Comentário vazio')
@@ -463,7 +463,7 @@ def add_comment(post_id):
 @login_required
 def delete_comment(comment_id):
     """Delete comment - admin only"""
-    comment = Comment.query.get_or_404(comment_id)
+    comment = db.get_or_404(Comment, comment_id)
     if not current_user.is_admin:
         flash('Apenas admins podem deletar comentários')
         return redirect(url_for('view_post', post_id=comment.post_id))
@@ -494,7 +494,7 @@ def depoimentos():
 @login_required
 def delete_testimonial(item_id):
     """Delete testimonial - admin only"""
-    item = Testimonial.query.get_or_404(item_id)
+    item = db.get_or_404(Testimonial, item_id)
     if not current_user.is_admin:
         flash('Apenas admins podem deletar depoimentos')
         return redirect(url_for('depoimentos'))
@@ -530,9 +530,9 @@ def register():
 
         # Check if user exists
         if User.query.filter_by(username=username).first():
-            return reg_error('Username already exists')
+            return reg_error('Nome de usuário já existe')
         if User.query.filter_by(email=email).first():
-            return reg_error('Email already registered')
+            return reg_error('E-mail já cadastrado')
 
         # Create new user
         user = User(username=username, email=email)
@@ -573,8 +573,8 @@ def login():
             return redirect(url_for('index'))
         
         if request.is_json:
-            return jsonify({'error': 'Invalid credentials'}), 401
-        flash('Invalid username or password')
+            return jsonify({'error': 'Credenciais inválidas'}), 401
+        flash('Usuário ou senha inválidos')
         return redirect(url_for('login'))
     
     return render_template('login.html')
@@ -597,7 +597,7 @@ def api_tags():
 def admin():
     """Admin dashboard"""
     if not current_user.is_admin:
-        flash('Admin access required')
+        flash('Acesso restrito a admins')
         return redirect(url_for('index'))
     
     posts = Post.query.order_by(Post.created_at.desc()).all()
@@ -628,14 +628,14 @@ def upload_teaser():
         return jsonify({'error': 'Apenas admins podem enviar imagens'}), 403
 
     if 'file' not in request.files:
-        return jsonify({'error': 'No file provided'}), 400
+        return jsonify({'error': 'Nenhum arquivo enviado'}), 400
     
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'error': 'No file selected'}), 400
+        return jsonify({'error': 'Nenhum arquivo selecionado'}), 400
     
     if not allowed_file(file.filename):
-        return jsonify({'error': 'File type not allowed'}), 400
+        return jsonify({'error': 'Tipo de arquivo não permitido'}), 400
     
     try:
         filename = save_teaser_image(file)
@@ -665,6 +665,25 @@ def not_found(e):
 @app.errorhandler(500)
 def server_error(e):
     return render_template('500.html'), 500
+
+# Headers de segurança em toda resposta. A CSP é permissiva em script/style
+# ('unsafe-inline') por causa dos handlers inline dos templates; marked.js é o
+# único script externo. CSP estrita (nonces) fica de backlog.
+@app.after_request
+def security_headers(response):
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "font-src 'self'; "
+        "connect-src 'self'; "
+        "frame-ancestors 'self'"
+    )
+    return response
 
 # ============= CLI COMMANDS =============
 

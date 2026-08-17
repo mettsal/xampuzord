@@ -1,0 +1,5 @@
+/* Fonte do build Tailwind (não editar a saída static/css/tailwind.css).
+ * As regras customizadas do site vivem em style.css, carregado depois deste. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
