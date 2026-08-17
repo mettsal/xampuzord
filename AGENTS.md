@@ -169,17 +169,14 @@ atualize esta lista.
 4. **`html lang="en"`** em `base.html` com UI em PT-BR — acessibilidade/SEO.
 5. **Mensagens misturadas PT/EN**: "Username already exists", "You can only
    edit your own posts" etc. Padronizar PT-BR.
-6. **Views infladas**: `view_post` incrementa a cada request (refresh, bots,
-   o próprio autor). Considerar throttle por sessão.
-7. **Autocomplete de tags**: `/api/tags` existe, UI nunca foi conectada.
-8. **Deprecations**: `datetime.utcnow` e `Query.get()` geram warnings em
+6. **Deprecations**: `datetime.utcnow` e `Query.get()` geram warnings em
    SQLAlchemy 2 / Python 3.12+.
-9. **Tailwind Play CDN** não é para produção (aviso no console, flash de
+7. **Tailwind Play CDN** não é para produção (aviso no console, flash de
    estilo). Gerar CSS estático no build de deploy.
 
 ### P2 — Higiene do repositório
-10. **Sem headers de segurança** (CSP, X-Frame-Options) e sem CAPTCHA no
-    registro — já listados no SECURITY.md como TODO.
+8. **Sem headers de segurança** (CSP, X-Frame-Options) e sem CAPTCHA no
+   registro — já listados no SECURITY.md como TODO.
 
 ## Deployment
 

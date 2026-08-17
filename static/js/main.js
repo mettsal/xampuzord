@@ -22,6 +22,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const themeToggle = document.getElementById('themeToggle');
     const body = document.body;
     const searchBar = document.getElementById('searchBar');
+
+    // Autocomplete de tags: popula o <datalist> da busca com as top 50 tags
+    // (/api/tags). Solução nativa (input[list]) — sem lib de UI, funciona em
+    // mobile e desktop. Falha silenciosa: sem a API, a busca continua igual.
+    const tagSuggestions = document.getElementById('tagSuggestions');
+    if (searchBar && tagSuggestions) {
+        fetch('/api/tags')
+            .then(r => r.json())
+            .then(tags => {
+                tags.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.name;
+                    tagSuggestions.appendChild(opt);
+                });
+            })
+            .catch(() => {});
+    }
     
     // Load saved theme
     const savedTheme = localStorage.getItem('theme') || 'light';

@@ -145,7 +145,7 @@ boneshampoo/
 
 - `GET /` - Homepage com 9 posts iniciais
 - `GET /api/posts?page=<int>&tags=<json>` - Posts para infinite scroll
-- `GET /post/<id>` - Visualizar post individual (incrementa views)
+- `GET /post/<id>` - Visualizar post individual (1 view por post por sessão)
 - `POST /post/new` - Criar novo post (requer autenticação)
 - `POST /post/<id>/edit` - Editar post (requer ownership ou admin)
 - `POST /post/<id>/delete` - Deletar post (requer ownership ou admin)

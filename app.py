@@ -1,5 +1,5 @@
 # app.py - Main Flask Application
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_limiter import Limiter
@@ -295,8 +295,15 @@ def api_posts():
 def view_post(post_id):
     """View single post"""
     post = Post.query.get_or_404(post_id)
-    post.views += 1
-    db.session.commit()
+    # 1 view por post por sessão: refresh, bots sem cookie e o próprio autor
+    # relendo não inflam o contador. A lista fica no cookie de sessão
+    # assinado (~4KB), então guardamos só os últimos 100 ids.
+    viewed = session.get('viewed_posts', [])
+    if post_id not in viewed:
+        post.views += 1
+        db.session.commit()
+        viewed.append(post_id)
+        session['viewed_posts'] = viewed[-100:]
     return render_template('post.html', post=post)
 
 @app.route('/post/new', methods=['GET', 'POST'])

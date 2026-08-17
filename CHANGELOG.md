@@ -2,6 +2,23 @@
 
 ## [Unreleased] - 2026-08-17
 
+### ✅ Features
+
+#### Throttle de views por sessão (P1)
+- `view_post` agora conta **1 view por post por sessão** (ids vistos ficam no
+  cookie de sessão assinado, limitado aos últimos 100 por causa dos ~4KB de
+  cookie): refresh, bots sem cookie persistente e o próprio autor relendo
+  não inflam mais o contador
+
+#### Autocomplete de tags na busca (P1)
+- A busca da navbar ganhou `<datalist>` nativo populado via `/api/tags`
+  (top 50 por contagem) — zero JS de UI, funciona em mobile e desktop;
+  falha silenciosa se a API estiver fora
+- Bump de cache `?v=20260817` (main.js)
+- Quirk descoberto no caminho: o `seed-db` preenche `Post.tags` direto e
+  **não** alimenta o agregado `Tag` — em banco recém-semeado, `/api/tags`
+  volta vazio até o primeiro post criado via editor
+
 ### ✅ Fix — P0-3: fonte Markdown dos posts (`body_md`)
 - Nova coluna `Post.body_md` guarda o Markdown original digitado no editor;
   `body_html` continua sendo o derivado sanitizado que vai para a página
