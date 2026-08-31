@@ -1,5 +1,5 @@
 # app.py - Main Flask Application
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session, Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_limiter import Limiter
@@ -8,6 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy.exc import IntegrityError
+from feedgen.feed import FeedGenerator
 from PIL import Image
 from datetime import datetime, timezone
 import json
@@ -263,27 +264,48 @@ def index():
     initial_posts = Post.query.order_by(Post.created_at.desc()).limit(9).all()
     return render_template('index.html', posts=initial_posts)
 
+def filter_by_tags(query, tags):
+    """Filtra Post.query por substring case-insensitive (OR) sobre o JSON
+    serializado ("ciber" casa com "cybernetic") — usado pelos feeds (semântica
+    de tag exata/parcial, não busca livre). Filtro e paginação acontecem no
+    banco. Seq scan aceitável nesta escala; se crescer, FTS."""
+    if not tags:
+        return query
+    wanted = [str(t).lower() for t in tags]
+    conditions = [db.cast(Post.tags, db.String).ilike(f'%{q}%') for q in wanted]
+    return query.filter(db.or_(*conditions))
+
+def filter_by_search(query, terms):
+    """Busca livre usada por /api/posts (search bar): cada termo casa se
+    aparecer, por substring case-insensitive, no título, nas tags (JSON
+    serializado) ou no corpo (body_html) do post. Mesmo trade-off de
+    filter_by_tags: seq scan com ilike, aceitável nesta escala."""
+    if not terms:
+        return query
+    wanted = [str(t).lower() for t in terms]
+    conditions = []
+    for term in wanted:
+        like = f'%{term}%'
+        conditions.append(db.or_(
+            Post.title.ilike(like),
+            db.cast(Post.tags, db.String).ilike(like),
+            Post.body_html.ilike(like),
+        ))
+    return query.filter(db.or_(*conditions))
+
 @app.route('/api/posts')
 def api_posts():
-    """API endpoint for infinite scroll"""
+    """API endpoint for infinite scroll. `tags` aqui é a query da search bar:
+    filtra por título, tags e conteúdo (ver filter_by_search)."""
     page = request.args.get('page', 1, type=int)
     tags_filter = request.args.get('tags', '[]')
-    
+
     try:
         tags_filter = json.loads(tags_filter)
     except (json.JSONDecodeError, TypeError):
         tags_filter = []
-    
-    query = Post.query
 
-    # Filter by tags if provided. Substring case-insensitive sobre o JSON
-    # serializado ("ciber" casa com "cybernetic", como a busca antiga do
-    # cliente) — o filtro e a paginação acontecem no banco, não mais O(N)
-    # em Python. Seq scan aceitável nesta escala; se crescer, FTS.
-    if tags_filter:
-        wanted = [str(t).lower() for t in tags_filter]
-        conditions = [db.cast(Post.tags, db.String).ilike(f'%{q}%') for q in wanted]
-        query = query.filter(db.or_(*conditions))
+    query = filter_by_search(Post.query, tags_filter)
 
     posts = query.order_by(Post.created_at.desc()).paginate(
         page=page, per_page=9, error_out=False
@@ -591,6 +613,72 @@ def api_tags():
     """Get all tags for autocomplete"""
     tags = Tag.query.order_by(Tag.count.desc()).limit(50).all()
     return jsonify([{'name': t.name, 'type': t.type, 'count': t.count} for t in tags])
+
+# ============= FEEDS (RSS/Atom) =============
+
+FEED_ENTRY_LIMIT = 50
+
+# XML 1.0 não aceita a maioria dos caracteres de controle — sobrevivem em
+# body_html de posts importados de .txt legado (Notepad, "poesia visual"
+# preservada byte-a-byte por tools/import_posts.py). fg.rss_str()/atom_str()
+# só valida isso na hora de serializar o documento inteiro, não por entry —
+# sem isso, um post derrubaria o feed inteiro em vez de só perder o caractere.
+_XML_ILLEGAL_RE = re.compile('[\x00-\x08\x0b\x0c\x0e-\x1f]')
+
+def _xml_safe(text):
+    return _XML_ILLEGAL_RE.sub('', text) if text else text
+
+def _build_feed(tags=None):
+    """Monta um FeedGenerator com os posts mais recentes (globais ou
+    filtrados por tag, mesmo filtro de /api/posts), corpo completo
+    (body_html já sanitizado) em cada entry. Um post com dado incompleto
+    (timestamp nulo, author órfão) não pode derrubar o feed inteiro — essa
+    entry é descartada individualmente e o resto segue."""
+    query = filter_by_tags(Post.query.options(db.joinedload(Post.author)), tags)
+    posts = query.order_by(Post.created_at.desc()).limit(FEED_ENTRY_LIMIT).all()
+
+    fg = FeedGenerator()
+    feed_url = request.url
+    title = 'Xampu Para Ossos' + (f' — #{", #".join(tags)}' if tags else '')
+    fg.id(feed_url)
+    fg.title(title)
+    fg.link(href=url_for('index', _external=True), rel='alternate')
+    fg.link(href=feed_url, rel='self')
+    fg.language('pt-BR')
+    fg.description('Blog minimalista de poesia digital com estética cyberpunk/K-punk.')
+    fg.icon(url_for('static', filename='images/wp-icon.png', _external=True))
+
+    for post in posts:
+        fe = fg.add_entry()
+        try:
+            permalink = url_for('view_post', post_id=post.id, _external=True)
+            fe.id(permalink)
+            fe.title(_xml_safe(post.title))
+            fe.link(href=permalink)
+            fe.content(_xml_safe(post.body_html), type='html')  # corpo completo, não teaser
+            fe.author(name=post.author.username)
+            fe.published((post.created_at or post.updated_at).replace(tzinfo=timezone.utc))
+            fe.updated((post.updated_at or post.created_at).replace(tzinfo=timezone.utc))
+            for t in post.tags or []:
+                value = t.get('value')
+                if value:
+                    fe.category(term=_xml_safe(value))
+        except Exception:
+            app.logger.exception('Post %s quebrou a geração do feed — pulado', post.id)
+            fg.remove_entry(fe)
+    return fg
+
+@app.route('/feed.xml')
+def feed_rss():
+    """Feed RSS 2.0 — global, ou filtrado por ?tag=valor (repetível)."""
+    fg = _build_feed(request.args.getlist('tag'))
+    return Response(fg.rss_str(), mimetype='application/rss+xml')
+
+@app.route('/feed.atom')
+def feed_atom():
+    """Feed Atom 1.0 — global, ou filtrado por ?tag=valor (repetível)."""
+    fg = _build_feed(request.args.getlist('tag'))
+    return Response(fg.atom_str(), mimetype='application/atom+xml')
 
 @app.route('/admin')
 @login_required

@@ -15,7 +15,10 @@ feedback, ou funcionalidades que só funcionam "na máquina do autor".
   trocar o tema na página do post (localStorage, não altera o post)
 - Apenas **admins** publicam/editam/deletam; usuário registrado é read-only
 - Editor Markdown com live preview, auto-save (localStorage) e atalhos
-- Sistema de teasers (auto / imagem / nenhum) e busca por tags
+- Sistema de teasers (auto / imagem / nenhum) e busca em tempo real por
+  título, tags e conteúdo do post
+- Compartilhamento social na página do post: X, WhatsApp e Instagram (Web
+  Share API no mobile, copiar link no desktop) + meta tags Open Graph/Twitter Card
 - Interface inteiramente em **português brasileiro**
 
 ## Comandos Essenciais
@@ -65,6 +68,12 @@ mobile, ver seção UX abaixo).
 - **Auth**: Flask-Login + Werkzeug PBKDF2
 - **Segurança**: Bleach (sanitização HTML), Flask-WTF (CSRF), Flask-Limiter (rate limit)
 - **Markdown**: marked.js no cliente — o HTML resultante é sanitizado no backend
+- **Feeds**: feedgen (RSS 2.0 + Atom 1.0) — `/feed.xml` e `/feed.atom`, globais
+  ou filtrados por `?tag=`, corpo completo (`body_html`) em cada entry
+- **Compartilhamento**: sem lib — `{% block head %}` (novo, `base.html`) injeta
+  Open Graph/Twitter Card em `post.html`; botões de X/WhatsApp são links de
+  intent puros; Instagram usa a Web Share API nativa (`navigator.share`) com
+  fallback de copiar link, lógica em `static/js/post-view.js`
 
 ### Arquivos-chave
 ```
@@ -171,8 +180,9 @@ atualize esta lista. O backlog original (15 itens) foi zerado entre
    (ver SECURITY.md).
 2. **CSP estrita**: a CSP atual usa `'unsafe-inline'` por causa dos handlers
    inline dos templates. Migrar para nonces/hashes quando valer a pena.
-3. **Filtro de tags é seq scan** (`ilike` sobre o JSON serializado): ok nesta
-   escala; se o acervo crescer muito, FTS ou tabela de junção.
+3. **Busca (tags/título/conteúdo) é seq scan** (`ilike` sobre `title`,
+   `body_html` e o JSON serializado de tags): ok nesta escala; se o acervo
+   crescer muito, FTS ou tabela de junção.
 
 ### P2 — Higiene do repositório
 4. **Cobertura de testes**: a suíte mínima existe (`tests/test_smoke.py`);

@@ -1,5 +1,81 @@
 # Changelog - Xampu Para Ossos
 
+## [Unreleased] - 2026-08-26
+
+### ✅ Feature — Busca por título e conteúdo
+
+- A search bar (antes só tags) agora casa também por **título** e
+  **conteúdo** (`body_html`) do post — `filter_by_search()` em `app.py`,
+  substring case-insensitive (ilike) OR entre os três campos
+- `/api/posts?tags=[...]` (nome do parâmetro mantido por compatibilidade)
+  passou a usar `filter_by_search()`; os feeds (`/feed.xml`, `/feed.atom`,
+  filtro `?tag=`) continuam em `filter_by_tags()` — semântica de tag
+  inalterada lá, só a busca da home mudou
+- Placeholder da search bar atualizado (`base.html`) e comentário do
+  `main.js` refletindo o novo escopo; nenhuma mudança no JS de fato — o
+  texto digitado já ia para o mesmo parâmetro
+- 1 teste novo em `test_smoke.py`: post só é encontrado pelo título casa,
+  post só é encontrado pelo conteúdo também casa, post sem nenhum dos dois
+  não aparece
+- Sem dependência nova, sem FTS — mesmo trade-off já documentado para o
+  filtro de tags (seq scan aceitável nesta escala, ver AGENTS.md)
+
+## [Unreleased] - 2026-08-25
+
+### ✅ Feature — Compartilhar para Redes Sociais
+
+- **Botões na página do post**: X (Twitter), WhatsApp e Instagram, ao lado
+  do botão de curtida
+- **X e WhatsApp**: links de intent puros (`twitter.com/intent/tweet`,
+  `wa.me`) com título e link do post pré-preenchidos — sem JS, sem lib
+- **Instagram**: sem intent de compartilhamento por URL disponível para
+  conteúdo de terceiros — usa a **Web Share API** (`navigator.share`) no
+  mobile, abrindo a folha nativa do SO (onde o Instagram normalmente
+  aparece como destino); no desktop, sem suporte à API, cai para copiar o
+  link (`navigator.clipboard`) com feedback visual no botão
+- **Open Graph + Twitter Card**: novo `{% block head %}` em `base.html`
+  (vazio por padrão, não afeta outras páginas) permite que `post.html`
+  injete `og:title`, `og:description`, `og:image`, `og:url` e
+  `twitter:card` — usa `post.teaser_image` como imagem (fallback pro logo
+  do site quando o post não tem teaser de imagem) e `body_html|striptags|truncate`
+  para a descrição
+- Nenhuma dependência nova, nenhuma rota nova — tudo resolvido em template
+  (filtros nativos do Jinja) e ~20 linhas de JS vanilla em `post-view.js`
+- 1 teste novo em `test_smoke.py`: confirma presença das meta tags OG/Twitter
+  e dos três botões de compartilhamento na página do post
+
+## [Unreleased] - 2026-08-18
+
+### ✅ Feature — Feeds RSS/Atom
+
+- **`GET /feed.xml`** (RSS 2.0) e **`GET /feed.atom`** (Atom 1.0), globais ou
+  filtrados por `?tag=valor` (mesmo `ilike` substring case-insensitive do
+  filtro de tags em `/api/posts`) — últimas 50 entries, ordenadas por
+  `created_at desc`
+- **Corpo completo** (`body_html`, já sanitizado) em cada entry, não teaser —
+  pedido explícito: leitor de feed não precisa clicar pra ler o poema inteiro
+- **`?tag=` repetível** (`request.args.getlist`) para filtro multi-tag, igual
+  a `/api/posts?tags=[]` — filtro de tags extraído para `filter_by_tags()`,
+  reusado pelos dois endpoints (era duplicado, uma cópia só cobria 1 tag)
+- **Isolamento por post**: um post com timestamp nulo ou autor órfão não
+  derruba mais o feed inteiro — a entry problemática é descartada e logada,
+  o resto do feed segue normal
+- **Sanitização XML**: caracteres de controle sobreviventes de import de
+  `.txt` legado (fora do allowlist do XML 1.0) são removidos do título/corpo/
+  tags antes de virar entry — sem isso, um poema de "poesia visual" importado
+  quebrava a serialização do feed inteiro (`fg.rss_str()`/`atom_str()` só
+  valida isso no documento completo, não por entry)
+- `Post.author` carregado com `joinedload` — evita N+1 query (1 SELECT extra
+  por post distinto sem isso)
+- Nova dependência: `feedgen` (gera RSS e Atom a partir do mesmo objeto,
+  cuida do escaping de HTML dentro do XML)
+- Autodiscovery: `<link rel="alternate" type="application/rss+xml">` e
+  `application/atom+xml` em `base.html` — feed readers acham sozinhos
+- 7 testes novos em `test_smoke.py`: feed global (RSS + Atom, título e corpo
+  presentes), filtro por 1 e por múltiplas tags, isolamento de post com
+  caractere ilegal e de post com autor órfão, links de autodiscovery no
+  `<head>`
+
 ## [Unreleased] - 2026-08-17
 
 ### 🧹 Faxina do backlog (P0/P1/P2 — backlog original zerado)

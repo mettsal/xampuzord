@@ -6,18 +6,22 @@ sem extensão), sem passar pelo editor web. Roda direto sobre o app context
 (não usa HTTP), portanto é imune ao CSRF e ao rate-limiting da aplicação.
 
 O acervo foi copiado do Windows em 02/07/2026 e a cópia achatou mtime e birth
-time de TODOS os arquivos — metadados de filesystem não dizem nada aqui.
-As datas vêm, em ordem de prioridade:
+time de TODOS os arquivos — metadados de filesystem desta cópia não dizem nada
+aqui (ver tools/scan_source_dates.py para recuperar timestamps da fonte
+original, se ainda existirem lá). As datas vêm, em ordem de prioridade:
 
   1. Sufixo de data no nome do arquivo, dd-mm-aa ou dd-mm-aaaa, separador
      opcional: "caveira-16-01-25" -> 2025-01-16 (título "caveira");
      "mundolesado10-09-25" também vale. Sufixo que não é data de verdade
      (mês 19 etc.) fica no título.
-  2. Componente de ano no caminho:
+  2. --date-manifest: JSON de tools/scan_source_dates.py com ctime/mtime da
+     pasta fonte original (ex. Google Drive) — usa o menor dos dois, se
+     disponível para aquele arquivo.
+  3. Componente de ano no caminho:
        poesia/2018/…       -> 2018-01-01
        poesia/2016-2017/…  -> 2016-01-01  (primeiro ano do range)
        poesia/sub-2015/…   -> 2014-01-01  ("antes de 2015")
-  3. Sem sinal nenhum -> sentinela 2000-01-01 (fundo do grid cronológico,
+  4. Sem sinal nenhum -> sentinela 2000-01-01 (fundo do grid cronológico,
      claramente "sem data"; re-datável depois pelo editor).
 
   Arquivos com a mesma data-base ganham +1 segundo cada, em ordem de
@@ -54,6 +58,7 @@ Exemplos:
 """
 import argparse
 import html
+import json
 import re
 import sys
 from collections import Counter, defaultdict
@@ -128,10 +133,22 @@ def year_from_component(name: str):
     return None
 
 
-def base_date_for(rel: Path, filename_date):
-    """Cadeia de prioridade da data; retorna (datetime, origem)."""
+def base_date_for(rel: Path, filename_date, manifest: dict = None):
+    """Cadeia de prioridade da data; retorna (datetime, origem).
+
+    `manifest` é o JSON gerado por tools/scan_source_dates.py na máquina que
+    ainda vê a pasta fonte original (ex. Google Drive) — usa o menor entre
+    ctime/mtime de lá como aproximação melhor que "1º de janeiro da pasta"
+    quando não há data explícita no nome do arquivo.
+    """
     if filename_date is not None:
         return filename_date, 'nome'
+    if manifest:
+        entry = manifest.get(rel.as_posix())
+        if entry:
+            stamps = [datetime.fromisoformat(entry[k]) for k in ('ctime', 'mtime') if entry.get(k)]
+            if stamps:
+                return min(stamps), 'origem'
     year = None
     for comp in rel.parent.parts:  # o componente mais profundo vence
         y = year_from_component(comp)
@@ -183,6 +200,20 @@ def body_html_for(text: str) -> str:
     return f'<pre><code>{html.escape(text)}</code></pre>'
 
 
+def strip_leading_blank_lines(text: str) -> str:
+    """Remove linhas totalmente em branco do início do texto.
+
+    Não mexe na indentação da própria primeira linha com conteúdo — espaço no
+    início de um verso pode ser poesia visual, diferente de uma linha vazia
+    antes do poema começar.
+    """
+    lines = text.split('\n')
+    i = 0
+    while i < len(lines) and lines[i].strip() == '':
+        i += 1
+    return '\n'.join(lines[i:])
+
+
 def first_line_title(text: str) -> str:
     """Primeira linha não vazia do poema — para arquivos sem nome utilizável."""
     for line in text.splitlines():
@@ -199,7 +230,7 @@ def resolve_author(username):
     return User.query.filter_by(is_admin=True).first()
 
 
-def collect_poems(root: Path):
+def collect_poems(root: Path, manifest: dict = None):
     """Lê o acervo e resolve variantes, duplicatas e colisões de título.
 
     Puro: não toca no banco. Retorna (poemas prontos, notas do que ficou fora).
@@ -225,6 +256,7 @@ def collect_poems(root: Path):
         if not text.strip():
             notes.append(f'⬜ vazio     {rel}')
             continue
+        text = strip_leading_blank_lines(text)
         candidates.append((path, rel, text))
 
     # -- (a) variantes: mesmo diretório + mesmo nome, extensões diferentes ---
@@ -247,7 +279,7 @@ def collect_poems(root: Path):
         # Nome inutilizável ('-----', '.txt'…): o título vem da 1ª linha do poema.
         if not title.strip(' -_.') or path.stem.startswith('.'):
             title = first_line_title(text) or title or path.stem
-        base, source = base_date_for(rel, filename_date)
+        base, source = base_date_for(rel, filename_date, manifest)
         poems.append(Poem(path=path, rel=rel, title=title[:TITLE_MAX], text=text,
                           created_at=base, date_source=source,
                           tag_values=tag_values_for(rel)))
@@ -296,6 +328,11 @@ def main() -> int:
                         help='Só mostra o que faria, sem gravar no banco.')
     parser.add_argument('--wipe-seed', action='store_true',
                         help="Apaga os posts de exemplo 'Digital Dreams #N' do seed-db.")
+    parser.add_argument('--date-manifest', default=None,
+                        help='JSON gerado por tools/scan_source_dates.py na pasta fonte '
+                             '(ex. Google Drive) com datas reais de ctime/mtime, usado como '
+                             "fallback melhor que '1º de janeiro da pasta' quando o nome do "
+                             'arquivo não tem data.')
     args = parser.parse_args()
 
     root = Path(args.dir)
@@ -303,7 +340,15 @@ def main() -> int:
         print(f"❌ Pasta não encontrada: {root.resolve()}")
         return 1
 
-    poems, notes = collect_poems(root)
+    manifest = None
+    if args.date_manifest:
+        manifest_path = Path(args.date_manifest)
+        if not manifest_path.is_file():
+            print(f"❌ Manifesto de datas não encontrado: {manifest_path.resolve()}")
+            return 1
+        manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+
+    poems, notes = collect_poems(root, manifest)
 
     with app.app_context():
         author = resolve_author(args.author)
@@ -386,8 +431,8 @@ def main() -> int:
         print(f"   Fora por regra local: variantes {kinds['🔀']} | duplicatas {kinds['🔁']}"
               f" | binários {kinds['🚫']} | vazios {kinds['⬜']}")
         print(f"   Títulos desambiguados (sufixo romano): {renamed}")
-        print(f"   Datas: nome-do-arquivo {date_sources['nome']} | pasta {date_sources['pasta']}"
-              f" | sentinela-2000 {date_sources['sentinela']}")
+        print(f"   Datas: nome-do-arquivo {date_sources['nome']} | manifesto-origem {date_sources['origem']}"
+              f" | pasta {date_sources['pasta']} | sentinela-2000 {date_sources['sentinela']}")
         if args.dry_run:
             print("   (dry-run — rode de novo sem --dry-run para gravar)")
 

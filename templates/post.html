@@ -3,6 +3,24 @@
 
 {% block title %}{{ post.title }} - Xampu Para Ossos{% endblock %}
 
+{% set permalink = url_for('view_post', post_id=post.id, _external=True) %}
+{% set share_image = url_for('static', filename=post.teaser_image, _external=True)
+                      if post.teaser_type == 'image' and post.teaser_image
+                      else url_for('static', filename='images/wp-icon.png', _external=True) %}
+{% set share_excerpt = post.body_html|striptags|truncate(160) %}
+
+{% block head %}
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ post.title }}">
+<meta property="og:description" content="{{ share_excerpt }}">
+<meta property="og:url" content="{{ permalink }}">
+<meta property="og:image" content="{{ share_image }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ post.title }}">
+<meta name="twitter:description" content="{{ share_excerpt }}">
+<meta name="twitter:image" content="{{ share_image }}">
+{% endblock %}
+
 {% block content %}
 <article id="postThemeWrapper" data-author-theme="{{ post.post_theme }}"
          class="max-w-4xl mx-auto post-theme-wrapper post-theme-{{ post.post_theme }} p-6">
@@ -58,6 +76,22 @@
                 aria-label="Curtir este post"
                 class="px-4 py-2 border border-current hover:bg-current hover:text-inverse">
             <span id="likeIcon">♡</span> <span id="likeCount">{{ post.likes|length }}</span>
+        </button>
+    </div>
+
+    <!-- Compartilhar -->
+    <div class="mt-4 flex flex-wrap items-center gap-3 text-sm"
+         id="shareBar" data-title="{{ post.title }}" data-url="{{ permalink }}">
+        <span class="opacity-70">Compartilhar:</span>
+        <a href="https://twitter.com/intent/tweet?text={{ post.title|urlencode }}&url={{ permalink|urlencode }}"
+           target="_blank" rel="noopener noreferrer" aria-label="Compartilhar no X"
+           class="px-3 py-2 border border-current hover:bg-current hover:text-inverse">𝕏</a>
+        <a href="https://wa.me/?text={{ (post.title ~ ' — ' ~ permalink)|urlencode }}"
+           target="_blank" rel="noopener noreferrer" aria-label="Compartilhar no WhatsApp"
+           class="px-3 py-2 border border-current hover:bg-current hover:text-inverse">💬</a>
+        <button id="shareInstagramBtn" aria-label="Compartilhar no Instagram"
+                class="px-3 py-2 border border-current hover:bg-current hover:text-inverse">
+            📷 <span id="shareInstagramLabel" aria-live="polite">Instagram</span>
         </button>
     </div>
 
@@ -117,5 +151,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/post-view.js') }}?v=20260808"></script>
+<script src="{{ url_for('static', filename='js/post-view.js') }}?v=20260825"></script>
 {% endblock %}

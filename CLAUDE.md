@@ -69,6 +69,8 @@ flask make-admin
 - **Auth**: Flask-Login com Werkzeug password hashing
 - **Security**: Bleach (XSS), Flask-Limiter (rate limiting)
 - **Markdown**: marked.js (client-side parsing)
+- **Feeds**: feedgen (RSS 2.0 + Atom 1.0, global e por tag)
+- **Compartilhamento**: sem lib — links de intent (X/WhatsApp) + Web Share API (Instagram)
 - **Deployment**: Gunicorn + Nginx (recomendado)
 
 ### Estrutura de Dados
@@ -130,6 +132,23 @@ Uploads salvos em `static/uploads/teasers/` com UUID no filename.
 
 Cada post pode ter tema independente. CSS usa classes `.post-theme-{nome}` com custom properties isoladas.
 
+### Compartilhamento Social
+
+`templates/base.html` expõe `{% block head %}{% endblock %}` (vazio por
+padrão) logo antes de `</head>`, permitindo que templates filhos injetem
+meta tags próprias. `templates/post.html` usa esse bloco para declarar
+Open Graph (`og:title`, `og:description`, `og:image`, `og:url`) e Twitter
+Card (`summary_large_image`), reaproveitando `post.body_html|striptags|truncate`
+para a descrição e `post.teaser_image` (com fallback pro logo) para a imagem.
+
+Botões de compartilhar na página do post:
+- **X / WhatsApp**: links de intent puros (`twitter.com/intent/tweet`,
+  `wa.me`), sem JS.
+- **Instagram**: não tem intent de compartilhamento por URL. `static/js/post-view.js`
+  tenta `navigator.share()` (Web Share API, abre a folha nativa no mobile,
+  onde o Instagram costuma aparecer) e cai para `navigator.clipboard.writeText()`
+  (copiar link) quando a API não existe (desktop).
+
 ### Importante: Consistência de Estilo
 
 - **Font Kerning**: Desabilitado (`font-kerning: normal`) para look "code editor"
@@ -145,7 +164,7 @@ Cada post pode ter tema independente. CSS usa classes `.post-theme-{nome}` com c
 ```
 GET  /                          → Homepage com 9 posts iniciais
 GET  /sobre                     → Página sobre o projeto
-GET  /api/posts?page=N&tags=[]  → Infinite scroll pagination
+GET  /api/posts?page=N&tags=[]  → Infinite scroll + busca (título/tags/conteúdo)
 POST /post/new                  → Criar post (JSON, requer auth, rate: 20/hora)
 POST /post/<id>/edit            → Editar (ownership check)
 POST /post/<id>/delete          → Deletar (+ cleanup de imagem)
@@ -159,6 +178,8 @@ POST /post/<id>/comment         → Comentar (requer login, rate: 10/hora)
 POST /comment/<id>/delete       → Deletar comentário (admin)
 GET|POST /depoimentos           → Guestbook (POST requer login, rate: 10/hora)
 POST /depoimento/<id>/delete    → Deletar depoimento (admin)
+GET  /feed.xml[?tag=X]          → Feed RSS 2.0, corpo completo (global ou por tag)
+GET  /feed.atom[?tag=X]         → Feed Atom 1.0, corpo completo (global ou por tag)
 ```
 
 ### Security Notes
@@ -189,7 +210,8 @@ POST /depoimento/<id>/delete    → Deletar depoimento (admin)
 
 **main.js**:
 - Theme toggle com localStorage persistence
-- **Search/filter por tags** em tempo real (debounce 300ms)
+- **Search/filter por título, tags e conteúdo** em tempo real (debounce 300ms;
+  `filter_by_search()` em `app.py`, ilike OR sobre `title`/`tags`/`body_html`)
 - Click em tags para buscar automaticamente
 - Infinite scroll (IntersectionObserver)
 - Post card rendering dinâmico com temas

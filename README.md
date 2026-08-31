@@ -16,12 +16,14 @@ Um blog minimalista de poesia digital com estética cyberpunk/K-punk. Interface 
 - **Funcionalidades UX**:
   - ✅ Auto-save drafts para localStorage
   - ✅ Keyboard shortcuts (Ctrl+S salvar, Ctrl+P preview)
-  - ✅ Search/filter por tags em tempo real
+  - ✅ Search/filter por título, tags e conteúdo em tempo real
   - ✅ Click em tags para filtrar
   - ✅ Contador de visualizações
   - ✅ Upload de imagens teaser (drag & drop)
   - ✅ Scroll horizontal para posts largos
   - ✅ Auto-wrap em `<pre><code>`
+- **Feeds RSS/Atom**: global e por tag, corpo completo dos posts
+- **Compartilhar**: X, WhatsApp e Instagram na página do post (Open Graph/Twitter Card + Web Share API)
 
 ## Tech Stack
 
@@ -30,6 +32,8 @@ Um blog minimalista de poesia digital com estética cyberpunk/K-punk. Interface 
 - **Frontend**: Vanilla JavaScript, Tailwind CSS
 - **Authentication**: Flask-Login
 - **Security**: Bleach for HTML sanitization, Werkzeug for password hashing
+- **Feeds**: feedgen (RSS 2.0 + Atom 1.0)
+- **Compartilhamento**: sem dependência — links de intent (X/WhatsApp) + Web Share API nativa (Instagram)
 
 ## Instalação
 
@@ -161,7 +165,7 @@ boneshampoo/
 ## API Endpoints
 
 - `GET /` - Homepage com 9 posts iniciais
-- `GET /api/posts?page=<int>&tags=<json>` - Posts para infinite scroll
+- `GET /api/posts?page=<int>&tags=<json>` - Posts para infinite scroll; `tags` é a busca da search bar (casa por título, tags e conteúdo)
 - `GET /post/<id>` - Visualizar post individual (1 view por post por sessão)
 - `POST /post/new` - Criar novo post (requer autenticação)
 - `POST /post/<id>/edit` - Editar post (requer ownership ou admin)
@@ -180,6 +184,8 @@ boneshampoo/
 - `POST /comment/<id>/delete` - Deletar comentário (admin)
 - `GET/POST /depoimentos` - Guestbook de depoimentos (POST requer login)
 - `POST /depoimento/<id>/delete` - Deletar depoimento (admin)
+- `GET /feed.xml?tag=<opcional>` - Feed RSS 2.0 (global ou por tag, corpo completo)
+- `GET /feed.atom?tag=<opcional>` - Feed Atom 1.0 (global ou por tag, corpo completo)
 
 ## Temas Disponíveis
 

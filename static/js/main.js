@@ -137,9 +137,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         observer.observe(scrollSentinel);
 
-        // Busca server-side: a query vai ao /api/posts como filtro de tags e o
-        // grid é reconstruído do zero — posts fora das páginas já carregadas
-        // agora aparecem nos resultados.
+        // Busca server-side: a query vai ao /api/posts e casa por título, tags
+        // e conteúdo do post (filter_by_search em app.py); o grid é
+        // reconstruído do zero — posts fora das páginas já carregadas agora
+        // aparecem nos resultados.
         const performSearch = (query) => {
             searchTags = query ? [query] : [];
             postGrid.innerHTML = '';

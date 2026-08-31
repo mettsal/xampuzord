@@ -88,6 +88,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Compartilhar no Instagram: Web Share API no mobile (abre a folha nativa,
+    // onde o Instagram costuma aparecer como destino); no desktop, sem suporte
+    // à API, cai para copiar o link — é o fluxo real de quem posta no Instagram
+    // pelo navegador.
+    const shareBar = document.getElementById('shareBar');
+    const igBtn = document.getElementById('shareInstagramBtn');
+    if (shareBar && igBtn) {
+        const shareData = { title: shareBar.dataset.title, url: shareBar.dataset.url };
+        igBtn.addEventListener('click', async () => {
+            const label = document.getElementById('shareInstagramLabel');
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                    return;
+                } catch (e) {
+                    if (e.name === 'AbortError') return; // usuário cancelou a folha nativa
+                }
+            }
+            try {
+                await navigator.clipboard.writeText(shareData.url);
+                label.textContent = 'Link copiado!';
+            } catch (e) {
+                label.textContent = 'Copie manualmente';
+            }
+            setTimeout(() => { label.textContent = 'Instagram'; }, 2000);
+        });
+    }
+
     const MIN_ZOOM = 0.5;
     const MAX_ZOOM = 3;
     const FIT_FLOOR = 0.55; // abaixo disso o texto fica ilegível; mantém scroll horizontal
