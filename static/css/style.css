@@ -338,7 +338,9 @@ body.dark {
    ou mosaico mobile). Padrão W W W / B W B a cada 6 cards (2 linhas):
    as posições 4 e 6 de cada bloco de 6 são B. As vars de tema são
    sobrescritas no card: nem o tema global interfere — W é sempre branco,
-   B é sempre preto. nth-child cobre paginação/busca sem JS. */
+   B é sempre preto. nth-child cobre paginação/busca sem JS. Temas fixados
+   pelo autor (post_theme != inherit) nunca entram aqui — já usam sua
+   própria paleta via .post-theme-{nome} abaixo. */
 @media (min-width: 768px) {
     #postGrid .post-card.post-theme-inherit {
         --bg-color: #ffffff;
@@ -386,7 +388,23 @@ body.dark {
     outline: none;
 }
 
-#searchCount {
+#searchDropdown {
+    background: var(--bg-color);
+    color: var(--text-color);
+}
+
+.search-result-item {
+    text-decoration: none;
+    color: inherit;
+}
+
+.search-result-item:hover,
+.search-result-item:focus {
+    background: var(--text-color);
+    color: var(--bg-color);
+}
+
+.search-result-empty {
     white-space: nowrap;
 }
 

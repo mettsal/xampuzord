@@ -77,18 +77,111 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Infinite Scroll and other functionality
+    // Busca com dropdown: a searchBar mora na nav (base.html), presente em
+    // toda página, então essa lógica fica fora do bloco de infinite scroll
+    // (que só existe na index). A busca nunca toca o grid/mosaico — ela
+    // consulta /api/posts (mesmo filtro título/tags/conteúdo de
+    // filter_by_search em app.py) e mostra os resultados num dropdown
+    // clicável abaixo da searchBar; cada item linka direto pro post.
+    const searchDropdown = document.getElementById('searchDropdown');
+
+    if (searchBar && searchDropdown) {
+        const MAX_RESULTS = 8;
+        let searchTimeout;
+        let searchRequestId = 0;
+
+        const hideDropdown = () => {
+            searchDropdown.classList.add('hidden');
+            searchDropdown.innerHTML = '';
+        };
+
+        const renderResults = (posts) => {
+            if (posts.length === 0) {
+                searchDropdown.innerHTML = `<div class="search-result-empty px-3 py-2 text-sm opacity-70">Nenhum post encontrado</div>`;
+                searchDropdown.classList.remove('hidden');
+                return;
+            }
+            searchDropdown.innerHTML = posts.slice(0, MAX_RESULTS).map(post => `
+                <a href="/post/${post.id}" class="search-result-item block px-3 py-2 border-b border-current last:border-b-0">
+                    <div class="text-sm font-bold truncate">${post.title}</div>
+                    <div class="text-xs opacity-60">@${post.author} • ${new Date(post.created_at).toLocaleDateString('pt-BR')}</div>
+                </a>
+            `).join('');
+            searchDropdown.classList.remove('hidden');
+        };
+
+        const searchPosts = async (query) => {
+            if (!query) {
+                hideDropdown();
+                return;
+            }
+            const requestId = ++searchRequestId;
+            try {
+                const params = new URLSearchParams({ page: 1, tags: JSON.stringify([query]) });
+                const response = await fetch(`/api/posts?${params}`);
+                const posts = await response.json();
+                if (requestId !== searchRequestId) return; // resposta velha, query já mudou
+                renderResults(posts);
+            } catch (error) {
+                console.error('Error searching posts:', error);
+            }
+        };
+
+        searchBar.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const query = e.target.value.trim().toLowerCase();
+            searchTimeout = setTimeout(() => searchPosts(query), 300); // Debounce 300ms
+        });
+
+        searchBar.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                searchBar.value = '';
+                clearTimeout(searchTimeout);
+                hideDropdown();
+                searchBar.blur();
+            }
+        });
+
+        searchBar.addEventListener('focus', () => {
+            const query = searchBar.value.trim().toLowerCase();
+            if (query) searchPosts(query);
+        });
+
+        // Fecha o dropdown ao clicar fora dele e da searchBar
+        document.addEventListener('click', (e) => {
+            if (!searchDropdown.contains(e.target) && e.target !== searchBar) {
+                hideDropdown();
+            }
+        });
+
+        // Click em tags do post/card também busca por elas
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('tag-pill')) {
+                e.preventDefault(); // Tag fica dentro do <a> do card: não navega pro post
+                e.stopPropagation();
+                // Na página do post a pill mostra "tipo:valor" (post.html); no
+                // grid só o valor (index.html). O filtro do backend casa contra
+                // tag.value dentro do JSON, então buscamos só a parte do valor.
+                const tagText = e.target.textContent.trim();
+                const searchTerm = tagText.includes(':') ? tagText.split(':').slice(1).join(':').trim() : tagText;
+                searchBar.value = searchTerm;
+                clearTimeout(searchTimeout);
+                searchPosts(searchTerm.toLowerCase());
+                searchBar.focus();
+            }
+        });
+    }
+
+    // Infinite Scroll (só na index)
     const postGrid = document.getElementById('postGrid');
     const scrollSentinel = document.getElementById('scrollSentinel');
     const loadingIndicator = document.getElementById('loadingIndicator');
 
     if (postGrid && scrollSentinel) {
         const PAGE_SIZE = 9; // must match app.py per_page
-        const searchCount = document.getElementById('searchCount');
         let currentPage = 2;
         let isLoading = false;
         let hasMore = true;
-        let searchTags = [];
 
         const loadMorePosts = async () => {
             if (isLoading || !hasMore) return;
@@ -96,10 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (loadingIndicator) loadingIndicator.classList.remove('hidden');
 
             try {
-                const params = new URLSearchParams({
-                    page: currentPage,
-                    tags: JSON.stringify(searchTags)
-                });
+                const params = new URLSearchParams({ page: currentPage });
                 const response = await fetch(`/api/posts?${params}`);
                 const posts = await response.json();
 
@@ -122,7 +212,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } finally {
                 isLoading = false;
                 if (loadingIndicator) loadingIndicator.classList.add('hidden');
-                updateSearchCount();
             }
         };
 
@@ -136,62 +225,8 @@ document.addEventListener('DOMContentLoaded', function() {
         );
 
         observer.observe(scrollSentinel);
-
-        // Busca server-side: a query vai ao /api/posts e casa por título, tags
-        // e conteúdo do post (filter_by_search em app.py); o grid é
-        // reconstruído do zero — posts fora das páginas já carregadas agora
-        // aparecem nos resultados.
-        const performSearch = (query) => {
-            searchTags = query ? [query] : [];
-            postGrid.innerHTML = '';
-            currentPage = 1;
-            hasMore = true;
-            observer.observe(scrollSentinel); // re-observa se o fim anterior o removeu
-            loadMorePosts();
-        };
-
-        function updateSearchCount() {
-            if (!searchCount) return;
-            if (searchTags.length === 0) {
-                searchCount.classList.add('hidden');
-                return;
-            }
-            const count = postGrid.querySelectorAll('.post-card').length;
-            searchCount.textContent = `${count} post${count !== 1 ? 's' : ''} encontrado${count !== 1 ? 's' : ''}`;
-            searchCount.classList.remove('hidden');
-        }
-
-        if (searchBar) {
-            let searchTimeout;
-            searchBar.addEventListener('input', (e) => {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    performSearch(e.target.value.trim().toLowerCase());
-                }, 300); // Debounce 300ms
-            });
-
-            // Clear search on Escape
-            searchBar.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    searchBar.value = '';
-                    clearTimeout(searchTimeout);
-                    performSearch('');
-                }
-            });
-        }
-
-        // Click on tags to search
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('tag-pill') && searchBar) {
-                e.stopPropagation(); // Prevent post navigation
-                const tagText = e.target.textContent.trim();
-                searchBar.value = tagText;
-                performSearch(tagText.toLowerCase());
-                searchBar.focus();
-            }
-        });
     }
-    
+
     // Mosaico 3 colunas opcional no mobile (estilo Instagram). Só existe na
     // index; a preferência fica em localStorage como o tema global.
     const gridToggle = document.getElementById('gridToggle');
@@ -211,9 +246,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Create post card element with teaser support
     function createPostCard(post) {
-        const card = document.createElement('div');
+        const card = document.createElement('a');
+        card.href = `/post/${post.id}`;
         const themeClass = post.post_theme ? `post-theme-${post.post_theme}` : 'post-theme-inherit';
-        card.className = `post-card p-0 hover:scale-105 transition-transform cursor-pointer relative ${themeClass}`;
+        card.className = `post-card p-0 hover:scale-105 transition-transform cursor-pointer relative block ${themeClass}`;
         
         const tagsHtml = post.tags.map(tag => `
             <span class="tag-pill px-2 py-1 text-xs border border-current">
@@ -271,11 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         card.innerHTML = cardContent;
-        
-        card.addEventListener('click', () => {
-            window.location.href = `/post/${post.id}`;
-        });
-        
+
         return card;
     }
 });

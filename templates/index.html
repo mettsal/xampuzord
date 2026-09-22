@@ -10,9 +10,9 @@
 </div>
 <div id="postGrid" class="grid grid-cols-1 md:grid-cols-3 gap-0 mb-8">
     {% for post in posts %}
-    <div class="post-card p-0 hover:scale-105 transition-transform cursor-pointer relative post-theme-{{ post.post_theme if post.post_theme else 'inherit' }}"
-         onclick="window.location.href='{{ url_for('view_post', post_id=post.id) }}'">
-        
+    <a href="{{ url_for('view_post', post_id=post.id) }}"
+       class="post-card p-0 hover:scale-105 transition-transform cursor-pointer relative block post-theme-{{ post.post_theme if post.post_theme else 'inherit' }}">
+
         <!-- Teaser Image or Text Preview -->
         {% if post.teaser_type == 'image' and post.teaser_image %}
             <!-- Full container image with overlay -->
@@ -66,7 +66,7 @@
                 </div>
             </div>
         {% endif %}
-    </div>
+    </a>
     {% endfor %}
 </div>
 

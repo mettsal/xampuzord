@@ -9,19 +9,23 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!content || !zoomIn || !zoomOut || !zoomLabel) return;
 
     // Seletor de tema para o LEITOR: não altera o post salvo; a preferência
-    // fica em localStorage ('readerPostTheme'). Vazio = tema escolhido pelo autor.
+    // fica em localStorage, escopada por post ('readerPostTheme:<id>') para
+    // que a troca num post nunca vaze pra outro — um tema fixado pelo autor
+    // sempre aparece por padrão, mesmo que o leitor tenha trocado o tema
+    // noutro post antes. Vazio = tema escolhido pelo autor.
     const readerTheme = document.getElementById('readerTheme');
     const themeWrapper = document.getElementById('postThemeWrapper');
     if (readerTheme && themeWrapper) {
         const POST_THEMES = ['inherit', 'dark', 'light', 'cyberpunk', 'matrix', 'vaporwave', 'noir', 'sunset', 'ocean'];
         const authorTheme = themeWrapper.dataset.authorTheme || 'inherit';
+        const storageKey = `readerPostTheme:${themeWrapper.dataset.postId}`;
 
         const applyReaderTheme = (theme) => {
             POST_THEMES.forEach(t => themeWrapper.classList.remove(`post-theme-${t}`));
             themeWrapper.classList.add(`post-theme-${theme || authorTheme}`);
         };
 
-        const savedTheme = localStorage.getItem('readerPostTheme');
+        const savedTheme = localStorage.getItem(storageKey);
         if (savedTheme && POST_THEMES.includes(savedTheme)) {
             readerTheme.value = savedTheme;
             applyReaderTheme(savedTheme);
@@ -30,9 +34,9 @@ document.addEventListener('DOMContentLoaded', function() {
         readerTheme.addEventListener('change', () => {
             const theme = readerTheme.value;
             if (theme) {
-                localStorage.setItem('readerPostTheme', theme);
+                localStorage.setItem(storageKey, theme);
             } else {
-                localStorage.removeItem('readerPostTheme');
+                localStorage.removeItem(storageKey);
             }
             applyReaderTheme(theme);
         });
