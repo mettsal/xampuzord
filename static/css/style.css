@@ -51,7 +51,7 @@ body.dark {
 .post-card {
     border: 1px solid var(--text-color);
     transition: all 0.3s;
-    aspect-ratio: 1;
+    aspect-ratio: 4 / 5;
 }
 
 .post-card:hover {
@@ -284,20 +284,35 @@ body.dark {
 .text-preview-container {
     background: var(--bg-color);
     overflow: hidden;
-    padding: 1rem;
 }
 
+/* O corpo vem embrulhado em <pre>, onde -webkit-line-clamp não age: o texto
+   ocupa o espaço que sobra acima do título e some num fade. */
 .text-preview-content {
+    flex: 1 1 0;
+    min-height: 0;
+    padding: 1rem 1rem 0;
     font-size: 0.8rem;
-    line-height: 1.1;
-    overflow: hidden;
-    max-height: 100%;
+    line-height: 1.3;
     font-family: var(--font-family);
     white-space: pre-wrap;
     word-wrap: break-word;
     overflow-wrap: break-word;
     word-break: normal;
     text-align: left;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 1.3em), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 1.3em), transparent);
+}
+
+.text-preview-title {
+    flex: none;
+    padding: 1rem 1rem 0.75rem;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+}
+
+.text-preview-title h3 {
+    overflow-wrap: anywhere;
 }
 
 .text-preview-content pre,
@@ -546,6 +561,519 @@ body.dark {
 .post-theme-ocean .glowy-title {
     text-shadow: 0 0 10px var(--post-accent),
                  0 0 15px var(--post-accent);
+}
+
+/* ===== REDESIGN: RIBBON / HEADER / SIDEBAR (home + galeria) =====
+   Paleta fixa (design_handoff_home_galeria / README_handoff.md), independente
+   do toggle Preto/Branco global — este é o "chrome" novo do site, o mosaico
+   por baixo continua usando var(--bg-color)/var(--text-color) como antes. */
+
+.xpo-ribbon {
+    background: #1c1c1c;
+    color: #e9e6de;
+    padding: 8px 28px;
+    font-family: 'JetBrains Mono', var(--font-family);
+    font-size: 12px;
+    letter-spacing: .06em;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    row-gap: 6px;
+}
+
+.xpo-ribbon .xpo-accent {
+    color: #ffee00;
+}
+
+.xpo-ribbon .xpo-dim {
+    color: #9d998f;
+}
+
+.xpo-ribbon .xpo-feeds {
+    margin-left: auto;
+    display: flex;
+    gap: 16px;
+}
+
+.xpo-ribbon .xpo-feeds a {
+    color: #f08a4b;
+    text-decoration: none;
+}
+
+.xpo-ribbon .xpo-feeds a:hover {
+    text-decoration: underline;
+}
+
+.xpo-header {
+    background: #f6f4ef;
+    color: #1c1c1c;
+    padding: 22px 40px;
+    border-bottom: 1px solid #e2ded5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.xpo-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+    color: #1c1c1c;
+}
+
+.xpo-logo {
+    width: 56px;
+    height: 110px;
+    margin: -8px 0;
+    image-rendering: pixelated;
+}
+
+.xpo-brand-title {
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: #1c1c1c;
+}
+
+/* Toggle da sidebar (Arquivo/Categorias): um botão só, sempre visível
+   (desktop: no vão entre o logo e o nav; mobile: linha própria abaixo do
+   logo/hambúrguer). Só existe na home — o block que o renderiza fica vazio
+   nas outras páginas. */
+.xpo-sidebar-toggle-btn {
+    font-family: 'JetBrains Mono', var(--font-family);
+    font-size: 15px;
+    letter-spacing: .06em;
+    color: #1c1c1c;
+    background: none;
+    border: 1px solid #1c1c1c;
+    cursor: pointer;
+    padding: 10px 20px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.xpo-sidebar-toggle-btn:hover {
+    background: #1c1c1c;
+    color: #f6f4ef;
+}
+
+.xpo-nav {
+    align-items: center;
+    gap: 28px;
+    font-family: 'JetBrains Mono', var(--font-family);
+    font-size: 14px;
+    letter-spacing: .08em;
+    color: #555;
+    flex-wrap: wrap;
+}
+
+.xpo-nav-link {
+    color: #555;
+    text-decoration: none;
+    background: none;
+    border: none;
+    padding: 0 0 2px 0;
+    font: inherit;
+    letter-spacing: inherit;
+    cursor: pointer;
+}
+
+.xpo-nav-link:hover {
+    color: #1c1c1c;
+}
+
+.xpo-nav-active {
+    color: #1c1c1c;
+    border-bottom: 1px solid #1c1c1c;
+}
+
+@media (min-width: 768px) {
+    .xpo-nav { display: flex !important; }
+}
+
+/* Busca: lupa de 22x22, expande pra esquerda sobrepondo o resto do nav
+   (desktop). No mobile vira um campo normal, full-width (ver media query). */
+.xpo-search {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    flex: none;
+}
+
+.xpo-search-label {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: 8px;
+    width: 22px;
+    overflow: hidden;
+    background: #f6f4ef;
+    border-bottom: 1px solid transparent;
+    padding: 4px 0;
+    cursor: text;
+    transition: width .35s cubic-bezier(.2,.8,.2,1), border-color .35s, padding .35s;
+}
+
+.xpo-search-label:hover,
+.xpo-search-label:focus-within {
+    width: 260px;
+    padding-left: 10px;
+    border-color: #1c1c1c;
+}
+
+.xpo-search-icon {
+    flex: none;
+    color: #1c1c1c;
+}
+
+.xpo-search-label input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font-family: 'JetBrains Mono', var(--font-family);
+    font-size: 12px;
+    color: #1c1c1c;
+}
+
+.xpo-search-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 260px;
+    margin-top: 6px;
+    background: #fff;
+    color: #1c1c1c;
+    border: 1px solid #1c1c1c;
+    z-index: 30;
+    max-height: 24rem;
+    overflow-y: auto;
+}
+
+/* ===== MOBILE (<768px): header/nav/busca/toggle em pilha vertical =====
+   O layout desktop (busca que expande no hover, toggle no vão do header)
+   não funciona em touch — aqui tudo vira full-width e empilhado. */
+@media (max-width: 767px) {
+    .xpo-header {
+        padding: 16px 20px;
+    }
+
+    .xpo-brand-title {
+        font-size: 22px;
+    }
+
+    .xpo-logo {
+        width: 40px;
+        height: 78px;
+    }
+
+    .xpo-sidebar-toggle-btn {
+        width: 100%;
+        justify-content: flex-start;
+        margin-top: 12px;
+    }
+
+    .xpo-nav {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        gap: 18px;
+        font-size: 15px;
+    }
+
+    .xpo-nav-link {
+        padding: 6px 0;
+        border-bottom: 1px solid #e2ded5;
+    }
+
+    .xpo-nav-active {
+        border-bottom-color: #1c1c1c;
+    }
+
+    #themeToggle.xpo-nav-link {
+        text-align: left;
+    }
+
+    .xpo-search {
+        width: 100%;
+        height: auto;
+    }
+
+    .xpo-search-label {
+        position: static;
+        transform: none;
+        width: 100%;
+        padding: 10px 0;
+        border-bottom: 1px solid #e2ded5;
+        flex-direction: row;
+    }
+
+    .xpo-search-label:hover,
+    .xpo-search-label:focus-within {
+        width: 100%;
+        padding-left: 0;
+    }
+
+    .xpo-search-dropdown {
+        position: static;
+        width: 100%;
+        margin-top: 8px;
+    }
+}
+
+/* Layout da home: lateral (arquivo + marcadores) + mosaico */
+.xpo-home-layout {
+    display: flex;
+    align-items: flex-start;
+}
+
+.xpo-sidebar {
+    flex: none;
+    overflow: hidden;
+    width: 260px;
+    opacity: 1;
+    transition: width .45s cubic-bezier(.2,.8,.2,1), opacity .3s;
+}
+
+.xpo-sidebar.xpo-sidebar-closed {
+    width: 0;
+    opacity: 0;
+}
+
+.xpo-sidebar-inner {
+    width: 260px;
+    box-sizing: border-box;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    border-right: 1px solid #e2ded5;
+    background: #f6f4ef;
+    color: #1c1c1c;
+    min-height: 100%;
+}
+
+.xpo-sidebar-title {
+    font-family: 'JetBrains Mono', var(--font-family);
+    font-size: 11px;
+    letter-spacing: .14em;
+    color: #8a8578;
+}
+
+.xpo-archive-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 4px 0;
+    cursor: pointer;
+    font-family: 'Newsreader', serif;
+    color: #1c1c1c;
+}
+
+.xpo-archive-row:hover {
+    color: #8a6d00;
+}
+
+.xpo-archive-row .xpo-arrow {
+    font-family: 'JetBrains Mono', var(--font-family);
+    font-size: 9px;
+    color: #8a8578;
+    width: 10px;
+    flex: none;
+}
+
+.xpo-archive-row .xpo-count {
+    font-family: 'JetBrains Mono', var(--font-family);
+    font-size: 11px;
+    color: #8a8578;
+}
+
+.xpo-archive-year { font-size: 19px; }
+.xpo-archive-month { font-size: 17px; padding-left: 18px; }
+.xpo-archive-post {
+    font-size: 16px;
+    font-style: italic;
+    padding-left: 36px;
+    cursor: default;
+}
+.xpo-archive-post a { color: inherit; text-decoration: none; }
+.xpo-archive-post a:hover { color: #8a6d00; }
+
+.xpo-archive-months, .xpo-archive-posts {
+    display: flex;
+    flex-direction: column;
+}
+
+.xpo-archive-months.xpo-closed, .xpo-archive-posts.xpo-closed {
+    display: none;
+}
+
+.xpo-markers-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.xpo-markers-clear {
+    cursor: pointer;
+    font-family: 'JetBrains Mono', var(--font-family);
+    font-size: 11px;
+    color: #8a8578;
+}
+
+.xpo-marker-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 4px 8px;
+    margin: 0 -8px;
+    cursor: pointer;
+    font-family: 'Newsreader', serif;
+    font-size: 17px;
+    color: #1c1c1c;
+    background: transparent;
+}
+
+.xpo-marker-row:hover {
+    background: #ece8dd;
+}
+
+.xpo-marker-row.xpo-marker-active {
+    background: #ffee00;
+}
+
+.xpo-marker-row .xpo-count {
+    font-family: 'JetBrains Mono', var(--font-family);
+    font-size: 11px;
+    color: #8a8578;
+}
+
+.xpo-mosaic-main {
+    flex: 1;
+    min-width: 0;
+    padding: 28px;
+}
+
+@media (max-width: 900px) {
+    .xpo-home-layout { flex-direction: column; align-items: stretch; }
+    .xpo-sidebar, .xpo-sidebar.xpo-sidebar-closed {
+        width: 100%;
+        opacity: 1;
+    }
+    .xpo-sidebar-inner { width: 100%; border-right: none; border-bottom: 1px solid #e2ded5; }
+    .xpo-sidebar.xpo-sidebar-closed .xpo-sidebar-inner { display: none; }
+    .xpo-mosaic-main { padding: 16px; }
+}
+
+/* ===== GALERIA ===== */
+.xpo-galeria-main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 28px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 72px;
+}
+
+.xpo-galeria-item {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.xpo-galeria-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+}
+
+.xpo-galeria-head h2 {
+    margin: 0;
+    font-family: 'Newsreader', serif;
+    font-weight: 400;
+    font-size: 32px;
+    color: #1c1c1c;
+}
+
+.xpo-galeria-head .xpo-count {
+    font-family: 'JetBrains Mono', var(--font-family);
+    font-size: 11px;
+    color: #8a8578;
+}
+
+.xpo-galeria-image {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border: 1px solid #1c1c1c;
+    background: #fff;
+    overflow: hidden;
+}
+
+.xpo-galeria-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.xpo-galeria-caption {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 18px;
+    background: #fff;
+    border: 1px solid #e2ded5;
+}
+
+.xpo-galeria-caption-text {
+    font-family: 'Newsreader', serif;
+    font-style: italic;
+    font-size: 18px;
+    line-height: 1.5;
+    color: #3a3833;
+    white-space: pre-wrap;
+}
+
+.xpo-galeria-meta {
+    display: flex;
+    gap: 16px;
+    font-family: 'JetBrains Mono', var(--font-family);
+    font-size: 11px;
+    color: #8a8578;
+}
+
+.xpo-galeria-admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px;
+    background: #fff;
+    border: 1px dashed #8a8578;
+    font-family: 'JetBrains Mono', var(--font-family);
+    font-size: 12px;
+    color: #1c1c1c;
+}
+
+.xpo-galeria-admin-form input[type="text"],
+.xpo-galeria-admin-form textarea {
+    background: transparent;
+    border: 1px solid #e2ded5;
+    padding: 8px 10px;
+    font: inherit;
+    color: inherit;
 }
 
 /* Theme-specific border colors */

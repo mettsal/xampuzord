@@ -148,6 +148,16 @@ class Testimonial(db.Model):
     created_at = db.Column(db.DateTime, default=utcnow)
     author = db.relationship('User', backref='testimonials')
 
+class GalleryItem(db.Model):
+    """Imagem da página Galeria; upload reaproveita save_teaser_image()."""
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    image_path = db.Column(db.String(200), nullable=False)  # path relativo a /static/, como Post.teaser_image
+    caption = db.Column(db.Text, nullable=True)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    author = db.relationship('User', backref='gallery_items')
+
 # ============= HELPERS =============
 
 @login_manager.user_loader
@@ -223,6 +233,43 @@ def decrement_tags(tags_list):
             if tag_obj.count == 0:
                 db.session.delete(tag_obj)
 
+MESES_PT = {
+    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
+    5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
+    9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro',
+}
+
+def build_archive_years():
+    """Árvore Ano → Mês → Poemas da sidebar da home. Só id/title/created_at
+    (sem body_html) para não carregar o conteúdo inteiro de cada post."""
+    rows = (
+        db.session.query(Post.id, Post.title, Post.created_at)
+        .filter(Post.created_at.isnot(None))
+        .order_by(Post.created_at.desc())
+        .all()
+    )
+    by_year = {}
+    for pid, title, created in rows:
+        by_year.setdefault(created.year, {}).setdefault(created.month, []).append(
+            {'id': pid, 'title': title}
+        )
+    years = []
+    for y in sorted(by_year.keys(), reverse=True):
+        months_dict = by_year[y]
+        months = [
+            {'month': m, 'name': MESES_PT[m], 'count': len(months_dict[m]), 'posts': months_dict[m]}
+            for m in sorted(months_dict.keys(), reverse=True)
+        ]
+        years.append({'year': y, 'count': sum(len(p) for p in months_dict.values()), 'months': months})
+    return years
+
+@app.context_processor
+def inject_ribbon_data():
+    """Dados do ribbon (topo de todas as páginas): total de poemas e último
+    publicado. Duas queries leves (count + order_by limit 1) em toda request."""
+    last_post = Post.query.order_by(Post.created_at.desc()).first()
+    return dict(ribbon_post_count=Post.query.count(), ribbon_last_post=last_post)
+
 def allowed_file(filename):
     """Check if the uploaded file is allowed"""
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -260,9 +307,13 @@ def save_teaser_image(file):
 
 @app.route('/')
 def index():
-    """Main page with post grid"""
+    """Main page with post grid + sidebar (arquivo ano/mês + marcadores)"""
     initial_posts = Post.query.order_by(Post.created_at.desc()).limit(9).all()
-    return render_template('index.html', posts=initial_posts)
+    archive_years = build_archive_years()
+    tag_counts = Tag.query.order_by(Tag.count.desc()).all()
+    return render_template(
+        'index.html', posts=initial_posts, archive_years=archive_years, tag_counts=tag_counts
+    )
 
 def filter_by_tags(query, tags):
     """Filtra Post.query por substring case-insensitive (OR) sobre o JSON
@@ -745,6 +796,62 @@ def upload_teaser():
 def sobre():
     """About page"""
     return render_template('sobre.html')
+
+@app.route('/galeria')
+def galeria():
+    """Galeria: lista vertical título → imagem → legenda"""
+    items = GalleryItem.query.order_by(GalleryItem.created_at.desc()).all()
+    return render_template('galeria.html', items=items)
+
+@app.route('/galeria/new', methods=['POST'])
+@login_required
+@limiter.limit("20 per hour")
+def galeria_new():
+    """Adicionar imagem à galeria — admin only, reaproveita save_teaser_image()"""
+    if not current_user.is_admin:
+        flash('Apenas admins podem adicionar imagens à galeria')
+        return redirect(url_for('galeria'))
+
+    title = (request.form.get('title') or '').strip()[:200]
+    caption = (request.form.get('caption') or '').strip()[:2000]
+    file = request.files.get('image')
+
+    if not title or not file or file.filename == '':
+        flash('Título e imagem são obrigatórios')
+        return redirect(url_for('galeria'))
+
+    image_path = save_teaser_image(file)
+    if not image_path:
+        flash('Arquivo inválido ou não é uma imagem')
+        return redirect(url_for('galeria'))
+
+    db.session.add(GalleryItem(
+        title=title, image_path=image_path, caption=caption, author_id=current_user.id
+    ))
+    db.session.commit()
+    return redirect(url_for('galeria'))
+
+@app.route('/galeria/<int:item_id>/delete', methods=['POST'])
+@login_required
+def galeria_delete(item_id):
+    """Deletar imagem da galeria — admin only"""
+    item = db.get_or_404(GalleryItem, item_id)
+    if not current_user.is_admin:
+        flash('Apenas admins podem deletar imagens da galeria')
+        return redirect(url_for('galeria'))
+
+    if item.image_path:
+        try:
+            image_fs_path = os.path.join('static', item.image_path)
+            if os.path.exists(image_fs_path):
+                os.remove(image_fs_path)
+        except Exception:
+            pass
+
+    db.session.delete(item)
+    db.session.commit()
+    flash('Imagem deletada')
+    return redirect(url_for('galeria'))
 
 @app.errorhandler(404)
 def not_found(e):

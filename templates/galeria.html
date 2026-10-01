@@ -1,0 +1,61 @@
+<!-- templates/galeria.html -->
+{% extends "base.html" %}
+
+{% block title %}Galeria - Xampu Para Ossos{% endblock %}
+
+{% block ribbon_items %}
+<span class="xpo-accent">GALERIA</span>
+<span>{{ items|length }} imagem{{ '' if items|length == 1 else 'ns' }}</span>
+{% endblock %}
+
+{% block main_class %}{% endblock %}
+{% block flash_wrap_class %}max-w-3xl mx-auto px-4 pt-4{% endblock %}
+
+{% block content %}
+<main class="xpo-galeria-main">
+    {% if current_user.is_authenticated and current_user.is_admin %}
+    <form method="POST" action="{{ url_for('galeria_new') }}" enctype="multipart/form-data" class="xpo-galeria-admin-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <strong>Adicionar imagem</strong>
+        <input type="text" name="title" placeholder="Título" maxlength="200" required>
+        <textarea name="caption" placeholder="Legenda (opcional)" rows="3" maxlength="2000"></textarea>
+        <input type="file" name="image" accept="image/png,image/jpeg,image/gif,image/webp" required>
+        <button type="submit" class="px-4 py-2 border border-current hover:bg-current hover:text-inverse self-start">
+            Publicar na galeria
+        </button>
+    </form>
+    {% endif %}
+
+    {% for item in items %}
+    <figure class="xpo-galeria-item">
+        <div class="xpo-galeria-head">
+            <h2>{{ item.title }}</h2>
+            <span class="xpo-count">#{{ item.id }}</span>
+        </div>
+        <div class="xpo-galeria-image">
+            <img src="/static/{{ item.image_path }}" alt="{{ item.title }}">
+        </div>
+        {% if item.caption or (current_user.is_authenticated and current_user.is_admin) %}
+        <figcaption class="xpo-galeria-caption">
+            {% if item.caption %}
+            <div class="xpo-galeria-caption-text">{{ item.caption }}</div>
+            {% endif %}
+            <div class="xpo-galeria-meta">
+                <span>@{{ item.author.username }}</span>
+                <span>{{ item.created_at.strftime('%d/%m/%Y') }}</span>
+                {% if current_user.is_authenticated and current_user.is_admin %}
+                <form method="POST" action="{{ url_for('galeria_delete', item_id=item.id) }}"
+                      onsubmit="return confirm('Deletar esta imagem?')" style="margin-left:auto">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="text-red-500 hover:underline">Deletar</button>
+                </form>
+                {% endif %}
+            </div>
+        </figcaption>
+        {% endif %}
+    </figure>
+    {% else %}
+    <p class="opacity-70 italic">Nenhuma imagem na galeria ainda.</p>
+    {% endfor %}
+</main>
+{% endblock %}

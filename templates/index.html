@@ -1,78 +1,143 @@
-<!-- templates/index-new.html -->
+<!-- templates/index.html -->
 {% extends "base.html" %}
 
-{% block content %}
-<div class="md:hidden flex justify-end mb-2">
-    <button id="gridToggle" aria-pressed="false"
-            class="px-3 py-2 border border-current hover:bg-current hover:text-inverse text-sm">
-        ▦ 3 colunas
-    </button>
-</div>
-<div id="postGrid" class="grid grid-cols-1 md:grid-cols-3 gap-0 mb-8">
-    {% for post in posts %}
-    <a href="{{ url_for('view_post', post_id=post.id) }}"
-       class="post-card p-0 hover:scale-105 transition-transform cursor-pointer relative block post-theme-{{ post.post_theme if post.post_theme else 'inherit' }}">
+{% block main_class %}{% endblock %}
+{% block flash_wrap_class %}container mx-auto px-4 pt-4{% endblock %}
 
-        <!-- Teaser Image or Text Preview -->
-        {% if post.teaser_type == 'image' and post.teaser_image %}
-            <!-- Full container image with overlay -->
-            <div class="teaser-image absolute inset-0">
-                <img src="/static/{{ post.teaser_image }}" alt="{{ post.title }}">
-            </div>
-            <div class="absolute inset-0 flex flex-col justify-between p-4 overlay-content">
-                <div></div> <!-- Spacer for centering -->
-                <h3 class="text-center text-lg glowy-title">{{ post.title }}</h3>
-                <div class="hidden md:flex flex-wrap gap-2 justify-center">
-                    {% for tag in post.tags %}
-                    <span class="tag-pill px-2 py-1 text-xs border border-current">
-                        {{ tag.value }}
-                    </span>
-                    {% endfor %}
-                </div>
-            </div>
-        {% elif post.teaser_type == 'none' %}
-            <div class="p-4">
-                <h3 class="text-lg font-bold mb-2">{{ post.title }}</h3>
-                <div class="text-sm mb-3 opacity-70">
-                    @{{ post.author.username }} • {{ post.created_at.strftime('%d/%m/%Y') }}
-                </div>
-                <div class="text-sm opacity-50 italic mb-3">Post sem preview</div>
-                <div class="hidden md:flex flex-wrap gap-2 mb-2">
-                    {% for tag in post.tags %}
-                    <span class="tag-pill px-2 py-1 text-xs border border-current">
-                        {{ tag.value }}
-                    </span>
-                    {% endfor %}
-                </div>
-                <div class="text-xs opacity-50">
-                    👁 {{ post.views }} views
-                </div>
-            </div>
-        {% else %}
-            <!-- Auto text preview (default) -->
-            <div class="text-preview-container absolute inset-0 flex flex-col justify-start items-start">
-                <div class="post-body text-preview-content">
-                    {{ post.body_html|safe }}
-                </div>
-                <div class="absolute bottom-4 left-4 right-4">
-                    <h3 class="text-left text-sm glowy-title mb-2">{{ post.title }}</h3>
-                    <div class="hidden md:flex flex-wrap gap-1">
-                        {% for tag in post.tags %}
-                        <span class="tag-pill px-1 py-0.5 text-xs border border-current">
-                            {{ tag.value }}
-                        </span>
+{% block header_toggle %}
+<button type="button" class="xpo-sidebar-toggle-btn" data-sidebar-toggle>
+    <span class="xpo-sidebar-toggle-label">▸ arquivo/categorias</span>
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="xpo-home-layout">
+    <aside class="xpo-sidebar" id="xpoSidebar">
+        <div class="xpo-sidebar-inner">
+            <div class="flex flex-col gap-3">
+                <div class="xpo-sidebar-title">ARQUIVO</div>
+                <div id="xpoArchiveTree" class="flex flex-col gap-0.5">
+                    {% for y in archive_years %}
+                    <div class="xpo-archive-row xpo-archive-year" data-archive-toggle data-target="xpo-year-{{ y.year }}">
+                        <span class="xpo-arrow">{{ '▼' if loop.first else '▶' }}</span>
+                        <span>{{ y.year }}</span>
+                        <span class="xpo-count">({{ y.count }})</span>
+                    </div>
+                    <div id="xpo-year-{{ y.year }}" class="xpo-archive-months{{ '' if loop.first else ' xpo-closed' }}">
+                        {% for m in y.months %}
+                        <div class="xpo-archive-row xpo-archive-month" data-archive-toggle data-target="xpo-month-{{ y.year }}-{{ m.month }}">
+                            <span class="xpo-arrow">{{ '▼' if loop.first else '▶' }}</span>
+                            <span>{{ m.name }}</span>
+                            <span class="xpo-count">({{ m.count }})</span>
+                        </div>
+                        <div id="xpo-month-{{ y.year }}-{{ m.month }}" class="xpo-archive-posts{{ '' if loop.first else ' xpo-closed' }}">
+                            {% for p in m.posts %}
+                            <div class="xpo-archive-row xpo-archive-post">
+                                <span class="xpo-arrow"></span>
+                                <a href="{{ url_for('view_post', post_id=p.id) }}">{{ p.title }}</a>
+                            </div>
+                            {% endfor %}
+                        </div>
                         {% endfor %}
                     </div>
+                    {% else %}
+                    <div class="opacity-60 text-sm italic">Nenhum poema ainda.</div>
+                    {% endfor %}
                 </div>
             </div>
-        {% endif %}
-    </a>
-    {% endfor %}
-</div>
+            <div class="flex flex-col gap-3">
+                <div class="xpo-markers-head">
+                    <span class="xpo-sidebar-title">MARCADORES</span>
+                    <span class="xpo-markers-clear hidden" id="xpoMarkersClear">limpar ✕</span>
+                </div>
+                <div id="xpoMarkers" class="flex flex-col gap-0.5">
+                    {% for t in tag_counts %}
+                    <div class="xpo-marker-row" data-marker="{{ t.name }}">
+                        <span>{{ t.name }}</span>
+                        <span class="xpo-count">({{ t.count }})</span>
+                    </div>
+                    {% else %}
+                    <div class="opacity-60 text-sm italic">Sem marcadores ainda.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </aside>
 
-<div id="loadingIndicator" class="text-center py-8 hidden">
-    <span class="cyber-glow">LOADING MORE POSTS...</span>
-</div>
+    <main class="xpo-mosaic-main">
+        <div class="md:hidden flex justify-end mb-2">
+            <button id="gridToggle" aria-pressed="false"
+                    class="px-3 py-2 border border-current hover:bg-current hover:text-inverse text-sm">
+                ▦ 3 colunas
+            </button>
+        </div>
+        <div id="postGrid" class="grid grid-cols-1 md:grid-cols-3 gap-0 mb-8">
+            {% for post in posts %}
+            <a href="{{ url_for('view_post', post_id=post.id) }}"
+               class="post-card p-0 hover:scale-105 transition-transform cursor-pointer relative block post-theme-{{ post.post_theme if post.post_theme else 'inherit' }}">
 
-<div id="scrollSentinel" class="h-1"></div>
+                <!-- Teaser Image or Text Preview -->
+                {% if post.teaser_type == 'image' and post.teaser_image %}
+                    <!-- Full container image with overlay -->
+                    <div class="teaser-image absolute inset-0">
+                        <img src="/static/{{ post.teaser_image }}" alt="{{ post.title }}">
+                    </div>
+                    <div class="absolute inset-0 flex flex-col justify-between p-4 overlay-content">
+                        <div></div> <!-- Spacer for centering -->
+                        <h3 class="text-center text-lg glowy-title">{{ post.title }}</h3>
+                        <div class="hidden md:flex flex-wrap gap-2 justify-center">
+                            {% for tag in post.tags %}
+                            <span class="tag-pill px-2 py-1 text-xs border border-current">
+                                {{ tag.value }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% elif post.teaser_type == 'none' %}
+                    <div class="p-4">
+                        <h3 class="text-lg font-bold mb-2">{{ post.title }}</h3>
+                        <div class="text-sm mb-3 opacity-70">
+                            @{{ post.author.username }} • {{ post.created_at.strftime('%d/%m/%Y') }}
+                        </div>
+                        <div class="text-sm opacity-50 italic mb-3">Post sem preview</div>
+                        <div class="hidden md:flex flex-wrap gap-2 mb-2">
+                            {% for tag in post.tags %}
+                            <span class="tag-pill px-2 py-1 text-xs border border-current">
+                                {{ tag.value }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        <div class="text-xs opacity-50">
+                            👁 {{ post.views }} views
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Auto text preview (default) -->
+                    <div class="text-preview-container absolute inset-0 flex flex-col">
+                        <div class="post-body text-preview-content">
+                            {{- post.body_html|safe -}}
+                        </div>
+                        <div class="text-preview-title">
+                            <h3 class="text-left text-sm glowy-title mb-2">{{ post.title }}</h3>
+                            <div class="hidden md:flex flex-wrap gap-1">
+                                {% for tag in post.tags %}
+                                <span class="tag-pill px-1 py-0.5 text-xs border border-current">
+                                    {{ tag.value }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+
+        <div id="loadingIndicator" class="text-center py-8 hidden">
+            <span class="cyber-glow">LOADING MORE POSTS...</span>
+        </div>
+
+        <div id="scrollSentinel" class="h-1"></div>
+    </main>
+</div>
 {% endblock %}

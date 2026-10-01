@@ -172,10 +172,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Infinite Scroll (só na index)
+    // Infinite Scroll (só na index). `activeMarkerTag` é setado pelos
+    // Marcadores da sidebar (ver bloco mais abaixo) e refaz a paginação
+    // filtrada, reaproveitando /api/posts (mesmo filtro da busca).
     const postGrid = document.getElementById('postGrid');
     const scrollSentinel = document.getElementById('scrollSentinel');
     const loadingIndicator = document.getElementById('loadingIndicator');
+    let activeMarkerTag = null;
+    let reloadMosaicWithTag = null;
 
     if (postGrid && scrollSentinel) {
         const PAGE_SIZE = 9; // must match app.py per_page
@@ -189,7 +193,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (loadingIndicator) loadingIndicator.classList.remove('hidden');
 
             try {
-                const params = new URLSearchParams({ page: currentPage });
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    tags: JSON.stringify(activeMarkerTag ? [activeMarkerTag] : [])
+                });
                 const response = await fetch(`/api/posts?${params}`);
                 const posts = await response.json();
 
@@ -225,6 +232,92 @@ document.addEventListener('DOMContentLoaded', function() {
         );
 
         observer.observe(scrollSentinel);
+
+        // Clicar num marcador (ou limpar): zera o mosaico renderizado no
+        // servidor e recarrega do zero já filtrado por tag.
+        reloadMosaicWithTag = (tag) => {
+            activeMarkerTag = tag;
+            postGrid.innerHTML = '';
+            currentPage = 1;
+            hasMore = true;
+            isLoading = false;
+            observer.observe(scrollSentinel);
+            loadMorePosts();
+        };
+    }
+
+    // Sidebar da home (Arquivo + Marcadores): toggle por um único botão no
+    // header, árvore ano/mês expansível, e clique em marcador filtra o
+    // mosaico acima.
+    const xpoSidebar = document.getElementById('xpoSidebar');
+    const sidebarToggles = document.querySelectorAll('[data-sidebar-toggle]');
+
+    if (xpoSidebar && sidebarToggles.length) {
+        const applySidebarState = (open) => {
+            xpoSidebar.classList.toggle('xpo-sidebar-closed', !open);
+            sidebarToggles.forEach(btn => {
+                const label = btn.querySelector('.xpo-sidebar-toggle-label');
+                if (label) label.textContent = open ? '◂ ocultar arquivo/categorias' : '▸ arquivo/categorias';
+            });
+        };
+        // Sem preferência salva: aberta no desktop, fechada no mobile/tablet
+        // (<=900px, mesmo corte do layout em coluna) — com 500+ poemas a
+        // árvore do Arquivo expandida de cara empurra o mosaico pra muito
+        // longe da dobra num celular.
+        const stored = localStorage.getItem('xpoSidebarOpen');
+        let sidebarOpen = stored !== null ? stored !== 'false' : window.innerWidth > 900;
+        applySidebarState(sidebarOpen);
+
+        sidebarToggles.forEach(btn => {
+            btn.addEventListener('click', () => {
+                sidebarOpen = !sidebarOpen;
+                localStorage.setItem('xpoSidebarOpen', sidebarOpen);
+                applySidebarState(sidebarOpen);
+            });
+        });
+    }
+
+    // Árvore do Arquivo: cada linha ano/mês tem data-archive-toggle +
+    // data-target apontando pro id do container a expandir/recolher.
+    document.querySelectorAll('[data-archive-toggle]').forEach(row => {
+        row.addEventListener('click', () => {
+            const target = document.getElementById(row.dataset.target);
+            if (!target) return;
+            const willOpen = target.classList.contains('xpo-closed');
+            target.classList.toggle('xpo-closed', !willOpen);
+            const arrow = row.querySelector('.xpo-arrow');
+            if (arrow) arrow.textContent = willOpen ? '▼' : '▶';
+        });
+    });
+
+    // Marcadores: clique filtra o mosaico; clicar de novo no mesmo marcador,
+    // ou em "limpar ✕", volta pro mosaico sem filtro.
+    const xpoMarkers = document.getElementById('xpoMarkers');
+    const xpoMarkersClear = document.getElementById('xpoMarkersClear');
+
+    if (xpoMarkers && reloadMosaicWithTag) {
+        const setActiveMarker = (tag) => {
+            xpoMarkers.querySelectorAll('.xpo-marker-row').forEach(row => {
+                row.classList.toggle('xpo-marker-active', row.dataset.marker === tag);
+            });
+            if (xpoMarkersClear) xpoMarkersClear.classList.toggle('hidden', !tag);
+        };
+
+        xpoMarkers.querySelectorAll('.xpo-marker-row').forEach(row => {
+            row.addEventListener('click', () => {
+                const tag = row.dataset.marker;
+                const next = activeMarkerTag === tag ? null : tag;
+                setActiveMarker(next);
+                reloadMosaicWithTag(next);
+            });
+        });
+
+        if (xpoMarkersClear) {
+            xpoMarkersClear.addEventListener('click', () => {
+                setActiveMarker(null);
+                reloadMosaicWithTag(null);
+            });
+        }
     }
 
     // Mosaico 3 colunas opcional no mobile (estilo Instagram). Só existe na
@@ -292,11 +385,9 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // Auto text preview (default)
             cardContent = `
-                <div class="text-preview-container absolute inset-0 flex flex-col justify-start items-start">
-                    <div class="post-body text-preview-content">
-                        ${post.body_html}
-                    </div>
-                    <div class="absolute bottom-4 left-4 right-4">
+                <div class="text-preview-container absolute inset-0 flex flex-col">
+                    <div class="post-body text-preview-content">${post.body_html}</div>
+                    <div class="text-preview-title">
                         <h3 class="text-left text-sm glowy-title mb-2">${post.title}</h3>
                         <div class="hidden md:flex flex-wrap gap-1">
                             ${tagsHtml}
