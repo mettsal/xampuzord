@@ -12,10 +12,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=20261003">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261003">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261004">
     {% block head %}{% endblock %}
 </head>
 <body>
+    <!-- Tema salvo aplicado antes do primeiro paint: sem isto o header/nav
+         (que agora seguem o tema) piscam claro→escuro a cada carregamento,
+         já que o main.js só roda no DOMContentLoaded. -->
+    <script>try { if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark'); } catch (e) {}</script>
     <!-- Ribbon: topo de todas as páginas, só informativo (o toggle da lateral mora no header). -->
     <div class="xpo-ribbon">
         {% block ribbon_items %}
@@ -84,7 +88,7 @@
 
     <!-- Flag p/ main.js: logado salva preferências (tema) no servidor via /api/user/settings -->
     <script>window.currentUser = {{ 'true' if current_user.is_authenticated else 'false' }};</script>
-    <script src="{{ url_for('static', filename='js/main.js') }}?v=20261003"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=20261004"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

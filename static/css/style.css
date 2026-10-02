@@ -29,6 +29,11 @@ body {
     font-family: var(--font-family);
     background-color: var(--bg-color);
     color: var(--text-color);
+}
+
+/* Fade só na troca manual de tema (classe posta pelo toggle em main.js);
+   no carregamento a página já nasce no tema salvo, sem animar. */
+body.theme-anim {
     transition: background-color 0.3s, color 0.3s;
 }
 
@@ -564,9 +569,31 @@ body.dark {
 }
 
 /* ===== REDESIGN: RIBBON / HEADER / SIDEBAR (home + galeria) =====
-   Paleta fixa (design_handoff_home_galeria / README_handoff.md), independente
-   do toggle Preto/Branco global — este é o "chrome" novo do site, o mosaico
-   por baixo continua usando var(--bg-color)/var(--text-color) como antes. */
+   Paleta do "chrome" novo do site (design_handoff_home_galeria /
+   README_handoff.md). Header, nav e sidebar (arquivo/marcadores) seguem o
+   toggle Preto/Branco global via as vars --xpo-* abaixo; o ribbon é sempre
+   escuro. O mosaico por baixo continua usando
+   var(--bg-color)/var(--text-color) como antes. */
+
+:root {
+    --xpo-bg: #f6f4ef;
+    --xpo-fg: #1c1c1c;
+    --xpo-nav: #555;
+    --xpo-muted: #8a8578;
+    --xpo-border: #e2ded5;
+    --xpo-hover-bg: #ece8dd;
+    --xpo-hover-fg: #8a6d00;
+}
+
+body.dark {
+    --xpo-bg: #141311;
+    --xpo-fg: #e9e6de;
+    --xpo-nav: #a8a49a;
+    --xpo-muted: #9d998f;
+    --xpo-border: #2e2c28;
+    --xpo-hover-bg: #26241f;
+    --xpo-hover-fg: #ffee00;
+}
 
 .xpo-ribbon {
     background: #1c1c1c;
@@ -606,10 +633,10 @@ body.dark {
 }
 
 .xpo-header {
-    background: #f6f4ef;
-    color: #1c1c1c;
+    background: var(--xpo-bg);
+    color: var(--xpo-fg);
     padding: 22px 40px;
-    border-bottom: 1px solid #e2ded5;
+    border-bottom: 1px solid var(--xpo-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -622,7 +649,7 @@ body.dark {
     align-items: center;
     gap: 14px;
     text-decoration: none;
-    color: #1c1c1c;
+    color: var(--xpo-fg);
 }
 
 .xpo-logo {
@@ -637,7 +664,7 @@ body.dark {
     font-size: 30px;
     font-weight: 700;
     letter-spacing: .04em;
-    color: #1c1c1c;
+    color: var(--xpo-fg);
 }
 
 /* Toggle da sidebar (Arquivo/Categorias): um botão só, sempre visível
@@ -648,9 +675,9 @@ body.dark {
     font-family: 'JetBrains Mono', var(--font-family);
     font-size: 15px;
     letter-spacing: .06em;
-    color: #1c1c1c;
+    color: var(--xpo-fg);
     background: none;
-    border: 1px solid #1c1c1c;
+    border: 1px solid var(--xpo-fg);
     cursor: pointer;
     padding: 10px 20px;
     display: inline-flex;
@@ -658,8 +685,8 @@ body.dark {
 }
 
 .xpo-sidebar-toggle-btn:hover {
-    background: #1c1c1c;
-    color: #f6f4ef;
+    background: var(--xpo-fg);
+    color: var(--xpo-bg);
 }
 
 .xpo-nav {
@@ -668,12 +695,12 @@ body.dark {
     font-family: 'JetBrains Mono', var(--font-family);
     font-size: 14px;
     letter-spacing: .08em;
-    color: #555;
+    color: var(--xpo-nav);
     flex-wrap: wrap;
 }
 
 .xpo-nav-link {
-    color: #555;
+    color: var(--xpo-nav);
     text-decoration: none;
     background: none;
     border: none;
@@ -684,12 +711,12 @@ body.dark {
 }
 
 .xpo-nav-link:hover {
-    color: #1c1c1c;
+    color: var(--xpo-fg);
 }
 
 .xpo-nav-active {
-    color: #1c1c1c;
-    border-bottom: 1px solid #1c1c1c;
+    color: var(--xpo-fg);
+    border-bottom: 1px solid var(--xpo-fg);
 }
 
 @media (min-width: 768px) {
@@ -717,7 +744,7 @@ body.dark {
     gap: 8px;
     width: 22px;
     overflow: hidden;
-    background: #f6f4ef;
+    background: var(--xpo-bg);
     border-bottom: 1px solid transparent;
     padding: 4px 0;
     cursor: text;
@@ -728,12 +755,12 @@ body.dark {
 .xpo-search-label:focus-within {
     width: 260px;
     padding-left: 10px;
-    border-color: #1c1c1c;
+    border-color: var(--xpo-fg);
 }
 
 .xpo-search-icon {
     flex: none;
-    color: #1c1c1c;
+    color: var(--xpo-fg);
 }
 
 .xpo-search-label input {
@@ -744,7 +771,7 @@ body.dark {
     background: transparent;
     font-family: 'JetBrains Mono', var(--font-family);
     font-size: 12px;
-    color: #1c1c1c;
+    color: var(--xpo-fg);
 }
 
 .xpo-search-dropdown {
@@ -754,8 +781,8 @@ body.dark {
     width: 260px;
     margin-top: 6px;
     background: #fff;
-    color: #1c1c1c;
-    border: 1px solid #1c1c1c;
+    color: var(--xpo-fg);
+    border: 1px solid var(--xpo-fg);
     z-index: 30;
     max-height: 24rem;
     overflow-y: auto;
@@ -794,11 +821,11 @@ body.dark {
 
     .xpo-nav-link {
         padding: 6px 0;
-        border-bottom: 1px solid #e2ded5;
+        border-bottom: 1px solid var(--xpo-border);
     }
 
     .xpo-nav-active {
-        border-bottom-color: #1c1c1c;
+        border-bottom-color: var(--xpo-fg);
     }
 
     #themeToggle.xpo-nav-link {
@@ -815,7 +842,7 @@ body.dark {
         transform: none;
         width: 100%;
         padding: 10px 0;
-        border-bottom: 1px solid #e2ded5;
+        border-bottom: 1px solid var(--xpo-border);
         flex-direction: row;
     }
 
@@ -858,9 +885,9 @@ body.dark {
     display: flex;
     flex-direction: column;
     gap: 32px;
-    border-right: 1px solid #e2ded5;
-    background: #f6f4ef;
-    color: #1c1c1c;
+    border-right: 1px solid var(--xpo-border);
+    background: var(--xpo-bg);
+    color: var(--xpo-fg);
     min-height: 100%;
 }
 
@@ -868,7 +895,7 @@ body.dark {
     font-family: 'JetBrains Mono', var(--font-family);
     font-size: 11px;
     letter-spacing: .14em;
-    color: #8a8578;
+    color: var(--xpo-muted);
 }
 
 .xpo-archive-row {
@@ -878,17 +905,17 @@ body.dark {
     padding: 4px 0;
     cursor: pointer;
     font-family: 'Newsreader', serif;
-    color: #1c1c1c;
+    color: var(--xpo-fg);
 }
 
 .xpo-archive-row:hover {
-    color: #8a6d00;
+    color: var(--xpo-hover-fg);
 }
 
 .xpo-archive-row .xpo-arrow {
     font-family: 'JetBrains Mono', var(--font-family);
     font-size: 9px;
-    color: #8a8578;
+    color: var(--xpo-muted);
     width: 10px;
     flex: none;
 }
@@ -896,7 +923,7 @@ body.dark {
 .xpo-archive-row .xpo-count {
     font-family: 'JetBrains Mono', var(--font-family);
     font-size: 11px;
-    color: #8a8578;
+    color: var(--xpo-muted);
 }
 
 .xpo-archive-year { font-size: 19px; }
@@ -908,7 +935,7 @@ body.dark {
     cursor: default;
 }
 .xpo-archive-post a { color: inherit; text-decoration: none; }
-.xpo-archive-post a:hover { color: #8a6d00; }
+.xpo-archive-post a:hover { color: var(--xpo-hover-fg); }
 
 .xpo-archive-months, .xpo-archive-posts {
     display: flex;
@@ -929,7 +956,7 @@ body.dark {
     cursor: pointer;
     font-family: 'JetBrains Mono', var(--font-family);
     font-size: 11px;
-    color: #8a8578;
+    color: var(--xpo-muted);
 }
 
 .xpo-marker-row {
@@ -941,22 +968,23 @@ body.dark {
     cursor: pointer;
     font-family: 'Newsreader', serif;
     font-size: 17px;
-    color: #1c1c1c;
+    color: var(--xpo-fg);
     background: transparent;
 }
 
 .xpo-marker-row:hover {
-    background: #ece8dd;
+    background: var(--xpo-hover-bg);
 }
 
 .xpo-marker-row.xpo-marker-active {
     background: #ffee00;
+    color: #1c1c1c;
 }
 
 .xpo-marker-row .xpo-count {
     font-family: 'JetBrains Mono', var(--font-family);
     font-size: 11px;
-    color: #8a8578;
+    color: var(--xpo-muted);
 }
 
 .xpo-mosaic-main {
@@ -971,7 +999,7 @@ body.dark {
         width: 100%;
         opacity: 1;
     }
-    .xpo-sidebar-inner { width: 100%; border-right: none; border-bottom: 1px solid #e2ded5; }
+    .xpo-sidebar-inner { width: 100%; border-right: none; border-bottom: 1px solid var(--xpo-border); }
     .xpo-sidebar.xpo-sidebar-closed .xpo-sidebar-inner { display: none; }
     .xpo-mosaic-main { padding: 16px; }
 }

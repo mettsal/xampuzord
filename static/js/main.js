@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (themeToggle) {
         themeToggle.addEventListener('click', () => {
+            body.classList.add('theme-anim');
             body.classList.toggle('dark');
             const isDark = body.classList.contains('dark');
             const theme = isDark ? 'dark' : 'light';

@@ -1,0 +1,6 @@
+[Unit]
+Description=Xampu Para Ossos - sync Google Drive -> pasta local
+
+[Service]
+Type=oneshot
+ExecStart=%h/Documents/Github/xampuzord/tools/drive_sync.sh
