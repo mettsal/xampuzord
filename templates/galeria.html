@@ -27,7 +27,7 @@
     {% endif %}
 
     {% for item in items %}
-    <figure class="xpo-galeria-item">
+    <figure class="xpo-galeria-item" id="img-{{ item.id }}">
         <div class="xpo-galeria-head">
             <h2>{{ item.title }}</h2>
             <span class="xpo-count">#{{ item.id }}</span>
@@ -51,6 +51,29 @@
                 </form>
                 {% endif %}
             </div>
+            {% if current_user.is_authenticated and current_user.is_admin %}
+            <details class="xpo-galeria-edit">
+                <summary>editar</summary>
+                <form method="POST" action="{{ url_for('galeria_edit', item_id=item.id) }}" enctype="multipart/form-data" class="xpo-galeria-admin-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <label>Título
+                        <input type="text" name="title" value="{{ item.title }}" maxlength="200" required>
+                    </label>
+                    <label>Legenda
+                        <textarea name="caption" rows="3" maxlength="2000">{{ item.caption or '' }}</textarea>
+                    </label>
+                    <label>Data (ordena a galeria)
+                        <input type="date" name="date" value="{{ item.created_at.strftime('%Y-%m-%d') }}">
+                    </label>
+                    <label>Trocar a imagem (opcional)
+                        <input type="file" name="image" accept="image/png,image/jpeg,image/gif,image/webp">
+                    </label>
+                    <button type="submit" class="px-4 py-2 border border-current hover:bg-current hover:text-inverse self-start">
+                        Salvar
+                    </button>
+                </form>
+            </details>
+            {% endif %}
         </figcaption>
         {% endif %}
     </figure>

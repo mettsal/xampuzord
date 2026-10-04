@@ -223,6 +223,17 @@ def first_line_title(text: str) -> str:
     return ''
 
 
+def free_title(title: str) -> str:
+    """Primeiro título livre no banco: 'x', 'x ii', 'x iii'…"""
+    if not Post.query.filter_by(title=title).first():
+        return title
+    for suffix in list(ROMAN) + [str(n) for n in range(21, 100)]:
+        trial = f'{title[:TITLE_MAX - len(suffix) - 1]} {suffix}'
+        if not Post.query.filter_by(title=trial).first():
+            return trial
+    raise RuntimeError(f'sem título livre para {title!r}')
+
+
 def resolve_author(username):
     """Autor: o informado por --author, senão o primeiro admin."""
     if username:
@@ -408,6 +419,7 @@ def main() -> int:
                     existing.body_html = body_html_for(poem.text)
                     existing.created_at = poem.created_at
                     existing.updated_at = utcnow()
+                    existing.source_path = existing.source_path or poem.rel.as_posix()
                 updated += 1
             else:
                 print(f"➕ cria     {poem.rel}  -> '{poem.title}' ({when}){tag_note}{rename_note}")
@@ -418,6 +430,7 @@ def main() -> int:
                         tags=process_tags(', '.join(poem.tag_values)),
                         author_id=author.id,
                         created_at=poem.created_at,
+                        source_path=poem.rel.as_posix(),
                     ))
                 created += 1
 

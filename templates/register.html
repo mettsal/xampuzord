@@ -7,8 +7,17 @@
 <div class="max-w-md mx-auto">
     <h2 class="text-2xl font-bold mb-6 cyber-glow text-center">JOIN THE COLLECTIVE</h2>
     
+    {% if not setting('registration_open') %}
+    <p class="text-center opacity-80 border border-current p-4">
+        Cadastros fechados no momento. Volte daqui a pouco.
+    </p>
+    {% else %}
     <form method="POST" class="space-y-4">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {# honeypot: invisível para gente, bot que preenche tudo é recusado #}
+        <div class="xpo-hp" aria-hidden="true">
+            <label>Não preencha <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+        </div>
         <div>
             <input type="text" name="username" placeholder="Pseudônimo"
                    class="w-full p-3 bg-transparent border border-current" required>
@@ -21,13 +30,23 @@
             <input type="password" name="password" placeholder="Senha" 
                    class="w-full p-3 bg-transparent border border-current" required>
         </div>
+        {% if turnstile_site_key() %}
+        <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key() }}" data-language="pt-br"></div>
+        {% endif %}
         <button type="submit" class="w-full p-3 border border-current hover:bg-current hover:text-inverse">
             Criar e Usar Pseudônimo
         </button>
     </form>
+    {% endif %}
     
     <p class="mt-6 text-center text-sm opacity-70">
         Possui pseudônimo? <a href="{{ url_for('login') }}" class="underline">Adentre-o aqui!</a>
     </p>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if turnstile_site_key() and setting('registration_open') %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
 {% endblock %}

@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Clear draft
                     localStorage.removeItem('postDraft');
                     // Redirect to post
-                    window.location.href = `/post/${result.post_id}`;
+                    window.location.href = result.url || `/post/${result.post_id}`;
                 } else {
                     alert('Error saving post');
                 }

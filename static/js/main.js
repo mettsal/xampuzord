@@ -50,9 +50,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function updateThemeButton(isDark) {
-        if (themeToggle) {
-            themeToggle.innerHTML = isDark ? '☀️ Branco' : '🌙 Preto';
-        }
+        if (!themeToggle) return;
+        // O ícone (sol ⇄ lua) é SVG no template, guiado por body.dark no CSS;
+        // aqui só o rótulo, que nomeia o tema para onde o clique leva.
+        const label = isDark ? 'Branco' : 'Preto';
+        const span = themeToggle.querySelector('.xpo-theme-label');
+        if (span) span.textContent = label;
+        else themeToggle.textContent = label;
+        themeToggle.setAttribute('aria-label', `Mudar para o tema ${label.toLowerCase()}`);
     }
     
     if (themeToggle) {
@@ -103,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             searchDropdown.innerHTML = posts.slice(0, MAX_RESULTS).map(post => `
-                <a href="/post/${post.id}" class="search-result-item block px-3 py-2 border-b border-current last:border-b-0">
+                <a href="/post/${post.slug || post.id}" class="search-result-item block px-3 py-2 border-b border-current last:border-b-0">
                     <div class="text-sm font-bold truncate">${post.title}</div>
                     <div class="text-xs opacity-60">@${post.author} • ${new Date(post.created_at).toLocaleDateString('pt-BR')}</div>
                 </a>
@@ -341,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create post card element with teaser support
     function createPostCard(post) {
         const card = document.createElement('a');
-        card.href = `/post/${post.id}`;
+        card.href = `/post/${post.slug || post.id}`;
         const themeClass = post.post_theme ? `post-theme-${post.post_theme}` : 'post-theme-inherit';
         card.className = `post-card p-0 hover:scale-105 transition-transform cursor-pointer relative block ${themeClass}`;
         

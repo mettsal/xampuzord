@@ -34,7 +34,7 @@
                             {% for p in m.posts %}
                             <div class="xpo-archive-row xpo-archive-post">
                                 <span class="xpo-arrow"></span>
-                                <a href="{{ url_for('view_post', post_id=p.id) }}">{{ p.title }}</a>
+                                <a href="{{ post_url(p) }}">{{ p.title }}</a>
                             </div>
                             {% endfor %}
                         </div>
@@ -73,7 +73,7 @@
         </div>
         <div id="postGrid" class="grid grid-cols-1 md:grid-cols-3 gap-0 mb-8">
             {% for post in posts %}
-            <a href="{{ url_for('view_post', post_id=post.id) }}"
+            <a href="{{ post_url(post) }}"
                class="post-card p-0 hover:scale-105 transition-transform cursor-pointer relative block post-theme-{{ post.post_theme if post.post_theme else 'inherit' }}">
 
                 <!-- Teaser Image or Text Preview -->

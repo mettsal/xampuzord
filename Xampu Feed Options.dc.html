@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&family=Spectral:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>body{margin:0;background:#d9d6cf;font-family:'Newsreader',serif}a{color:inherit;text-decoration:none}a:hover{text-decoration:underline}</style>
+</helmet>
+<section style="padding:64px 64px 0;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:6px;font-family:'JetBrains Mono',monospace;color:#2a2a2a">
+<div style="font-size:13px;letter-spacing:.12em;text-transform:uppercase">Rodada 3 · Home final · mosaico original + arquivo lateral estilo blogspot</div>
+<div style="font-size:13px;color:#555">Ribbon abre/fecha a lateral · anos e meses expandem · marcadores filtram o mosaico</div>
+</div>
+<div id="3a" style="width:1280px;flex:none;display:flex;flex-direction:column;gap:12px">
+<div style="font-family:'JetBrains Mono',monospace;font-size:13px;display:flex;gap:10px;align-items:center"><span style="background:#1c1c1c;color:#fff;padding:3px 8px">3a</span><span>Home — arquivo + marcadores + mosaico</span></div>
+<div style="background:#f6f4ef;color:#1c1c1c;box-shadow:0 20px 60px rgba(0,0,0,.15);display:flex;flex-direction:column">
+<div onClick="{{ toggleSide }}" style="display:flex;align-items:center;gap:18px;padding:8px 28px;background:#1c1c1c;color:#e9e6de;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em;cursor:pointer" style-hover="background:#2a2a28">
+<span style="color:#ffee00">{{ sideLabel }}</span>
+<span>{{ count }} poemas · atualizado 30 set 2026</span>
+<span style="color:#9d998f">último: pescaria</span>
+<span style="margin-left:auto;display:flex;gap:16px"><a href="#" style="color:#f08a4b">RSS</a><a href="#" style="color:#f08a4b">Atom</a></span>
+</div>
+<header style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:18px 28px;border-bottom:1px solid #e2ded5">
+<a href="#" style="display:flex;align-items:center;gap:14px;text-decoration:none"><img src="xoxox_xampu_para_ossos_original_red_beige.svg" style="width:56px;height:110px;margin:-8px 0;image-rendering:pixelated"><span style="font-family:Consolas,'Courier New',monospace;font-size:30px;font-weight:700;letter-spacing:.04em;text-shadow:0 0 10px rgba(255,238,0,.9)">XAMPU PARA OSSOS</span></a>
+<nav style="display:flex;align-items:center;gap:22px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em;color:#555"><a href="#" style="color:#1c1c1c;border-bottom:1px solid #1c1c1c">Poemas</a><a href="#3b">Galeria</a><a href="#">Sobre</a><a href="#">Depoimentos</a><span style="position:relative;width:22px;height:22px;flex:none"><label style="position:absolute;right:0;top:50%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:row-reverse;align-items:center;gap:8px;width:22px;overflow:hidden;background:#f6f4ef;border-bottom:1px solid transparent;padding:4px 0 4px 0;cursor:text;transition:width .35s cubic-bezier(.2,.8,.2,1),border-color .35s,padding .35s" style-hover="width:260px;padding-left:10px;border-color:#1c1c1c" style-focus-within="width:260px;padding-left:10px;border-color:#1c1c1c"><svg width="16" height="16" viewBox="0 0 16 16" style="flex:none" fill="none" stroke="#1c1c1c" stroke-width="1.6"><circle cx="6.5" cy="6.5" r="5"></circle><path d="M10.2 10.2L15 15"></path></svg><input placeholder="Buscar título, tags…" style="flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:'JetBrains Mono',monospace;font-size:12px;color:#1c1c1c"></label></span><a href="#">⚡ Tema</a><a href="#">Entrar/Registrar como pseudônimo</a></nav>
+</header>
+<div style="display:flex;align-items:flex-start">
+<aside style="flex:none;overflow:hidden;transition:width .45s cubic-bezier(.2,.8,.2,1),opacity .3s;width:{{ sideW }};opacity:{{ sideOp }}">
+<div style="width:260px;box-sizing:border-box;padding:28px 24px;display:flex;flex-direction:column;gap:32px;border-right:1px solid #e2ded5">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;color:#8a8578">ARQUIVO</div>
+<div style="display:flex;flex-direction:column;gap:2px">
+<sc-for list="{{ tree }}" as="r" hint-placeholder-count="6">
+<div onClick="{{ r.toggle }}" style="display:flex;align-items:baseline;gap:8px;padding:4px 0 4px {{ r.pad }};cursor:pointer;font-family:'Newsreader',serif;font-size:{{ r.size }}" style-hover="color:#8a6d00">
+<span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#8a8578;width:10px">{{ r.arrow }}</span>
+<span style="font-style:{{ r.italic }}">{{ r.label }}</span>
+<span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a8578">{{ r.count }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;color:#8a8578"><span>MARCADORES</span><span onClick="{{ clearTag }}" style="cursor:pointer">{{ clearLabel }}</span></div>
+<div style="display:flex;flex-direction:column;gap:2px">
+<sc-for list="{{ labels }}" as="l" hint-placeholder-count="6">
+<div onClick="{{ l.pick }}" style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 8px;margin:0 -8px;cursor:pointer;font-family:'Newsreader',serif;font-size:17px;background:{{ l.bg }}" style-hover="background:#ece8dd">
+<span>{{ l.name }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a8578">{{ l.n }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</aside>
+<main style="flex:1;min-width:0;padding:28px">
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+<sc-for list="{{ grid }}" as="p" hint-placeholder-count="9">
+<a href="#" style="position:relative;aspect-ratio:1;overflow:hidden;display:block;text-decoration:none;border:1px solid {{ p.fg }};margin:0 -1px -1px 0;background:{{ p.bg }};color:{{ p.fg }};transition:box-shadow .3s,border-color .3s" style-hover="border-color:#ffee00;box-shadow:0 0 15px #fbff00;z-index:10">
+<pre style="margin:0;padding:16px;font-family:Consolas,'Courier New',monospace;font-size:12.8px;line-height:1.1;white-space:pre-wrap;tab-size:4">{{ p.body }}</pre>
+<div style="position:absolute;left:16px;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;padding-top:24px;background:linear-gradient(to top,{{ p.bg }} 60%,transparent)">
+<div style="font-family:Consolas,'Courier New',monospace;font-size:14px;font-weight:700;text-shadow:0 0 8px rgba(255,238,0,.8)">{{ p.title }}</div>
+<div style="display:flex;flex-wrap:wrap;gap:4px"><sc-for list="{{ p.tags }}" as="t" hint-placeholder-count="2"><span style="font-family:Consolas,'Courier New',monospace;font-size:11px;padding:1px 5px;border:1px solid currentColor">{{ t }}</span></sc-for></div>
+</div>
+</a>
+</sc-for>
+</div>
+</main>
+</div>
+</div>
+</div>
+<div id="3b" style="width:1280px;flex:none;display:flex;flex-direction:column;gap:12px;margin-bottom:32px">
+<div style="font-family:'JetBrains Mono',monospace;font-size:13px;display:flex;gap:10px;align-items:center"><span style="background:#1c1c1c;color:#fff;padding:3px 8px">3b</span><span>Galeria — imagem com título + legenda, uma após a outra</span></div>
+<div style="background:#f6f4ef;color:#1c1c1c;box-shadow:0 20px 60px rgba(0,0,0,.15);display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:18px;padding:8px 28px;background:#1c1c1c;color:#e9e6de;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em">
+<span style="color:#ffee00">GALERIA</span><span>3 imagens</span><span style="margin-left:auto;display:flex;gap:16px"><a href="#" style="color:#f08a4b">RSS</a><a href="#" style="color:#f08a4b">Atom</a></span>
+</div>
+<header style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:18px 28px;border-bottom:1px solid #e2ded5">
+<a href="#" style="display:flex;align-items:center;gap:14px;text-decoration:none"><img src="xoxox_xampu_para_ossos_original_red_beige.svg" style="width:56px;height:110px;margin:-8px 0;image-rendering:pixelated"><span style="font-family:Consolas,'Courier New',monospace;font-size:30px;font-weight:700;letter-spacing:.04em;text-shadow:0 0 10px rgba(255,238,0,.9)">XAMPU PARA OSSOS</span></a>
+<nav style="display:flex;align-items:center;gap:22px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em;color:#555"><a href="#3a">Poemas</a><a href="#" style="color:#1c1c1c;border-bottom:1px solid #1c1c1c">Galeria</a><a href="#">Sobre</a><a href="#">Depoimentos</a><span style="position:relative;width:22px;height:22px;flex:none"><label style="position:absolute;right:0;top:50%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:row-reverse;align-items:center;gap:8px;width:22px;overflow:hidden;background:#f6f4ef;border-bottom:1px solid transparent;padding:4px 0 4px 0;cursor:text;transition:width .35s cubic-bezier(.2,.8,.2,1),border-color .35s,padding .35s" style-hover="width:260px;padding-left:10px;border-color:#1c1c1c" style-focus-within="width:260px;padding-left:10px;border-color:#1c1c1c"><svg width="16" height="16" viewBox="0 0 16 16" style="flex:none" fill="none" stroke="#1c1c1c" stroke-width="1.6"><circle cx="6.5" cy="6.5" r="5"></circle><path d="M10.2 10.2L15 15"></path></svg><input placeholder="Buscar título, tags…" style="flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:'JetBrains Mono',monospace;font-size:12px;color:#1c1c1c"></label></span><a href="#">⚡ Tema</a><a href="#">Entrar/Registrar como pseudônimo</a></nav>
+</header>
+<main style="max-width:760px;width:100%;margin:0 auto;padding:56px 28px 80px;box-sizing:border-box;display:flex;flex-direction:column;gap:72px">
+<sc-for list="{{ gallery }}" as="g" hint-placeholder-count="3">
+<figure style="margin:0;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px"><h2 style="margin:0;font-family:'Newsreader',serif;font-weight:400;font-size:32px">{{ g.title }}</h2><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a8578">{{ g.n }}</span></div>
+<div style="width:100%;aspect-ratio:4/3;border:1px solid #1c1c1c;background:#fff"><image-slot id="{{ g.slot }}" shape="rect" placeholder="Solte a imagem aqui"></image-slot></div>
+<figcaption style="display:flex;flex-direction:column;gap:8px;padding:16px 18px;background:#fff;border:1px solid #e2ded5">
+<div style="font-family:'Newsreader',serif;font-style:italic;font-size:18px;line-height:1.5;color:#3a3833">Legenda da imagem.</div>
+<div style="display:flex;gap:16px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a8578"><span>@xampuzordmin</span><span>data</span><span style="margin-left:auto">♡ 0</span></div>
+</figcaption>
+</figure>
+</sc-for>
+</main>
+</div>
+</div>
+</section>
+<section style="padding:64px 64px 0;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:6px;font-family:'JetBrains Mono',monospace;color:#2a2a2a">
+<div style="font-size:13px;letter-spacing:.12em;text-transform:uppercase">Rodada 2 · Mosaico central + feed lateral pelo ribbon</div>
+<div style="font-size:13px;color:#555">Clique no ribbon para abrir/fechar o feed</div>
+</div>
+<div id="2a" style="width:1280px;flex:none;display:flex;flex-direction:column;gap:12px">
+<div style="font-family:'JetBrains Mono',monospace;font-size:13px;display:flex;gap:10px;align-items:center"><span style="background:#1c1c1c;color:#fff;padding:3px 8px">2a</span><span>Mosaico + gaveta de feed</span></div>
+<div style="position:relative;height:900px;overflow:hidden;background:#f6f4ef;color:#1c1c1c;box-shadow:0 20px 60px rgba(0,0,0,.15);display:flex;flex-direction:column">
+<div onClick="{{ toggleFeed }}" style="display:flex;align-items:center;gap:18px;padding:8px 28px;background:#1c1c1c;color:#e9e6de;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em;cursor:pointer" style-hover="background:#2a2a28">
+<span style="display:flex;align-items:center;gap:8px;color:#f08a4b"><span style="width:7px;height:7px;border-radius:50%;background:#f08a4b"></span>FEED</span>
+<span>{{ count }} entradas · atualizado 30 set 2026</span>
+<span style="color:#9d998f">último: pescaria</span>
+<span style="margin-left:auto">{{ ribbonLabel }}</span>
+</div>
+<header style="display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid #e2ded5">
+<div style="display:flex;align-items:center;gap:12px"><img src="uploads/Untitled.jpg" style="width:30px;height:30px;image-rendering:pixelated"><span style="font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:.14em;font-weight:500">XAMPU PARA OSSOS</span></div>
+<nav style="display:flex;gap:24px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em;color:#555"><a href="#">Sobre</a><a href="#">Depoimentos</a><a href="#">Tema</a><a href="#">▦ 3 colunas</a><a href="#">Entrar</a><a href="#" style="color:#1c1c1c;border-bottom:1px solid #1c1c1c">Cadastrar pseudônimo</a></nav>
+</header>
+<div style="flex:1;overflow:hidden;padding:32px 28px">
+<div style="columns:3;column-gap:24px">
+<sc-for list="{{ posts }}" as="p" hint-placeholder-count="8">
+<a href="#" style="break-inside:avoid;display:flex;flex-direction:column;gap:14px;margin-bottom:24px;padding:22px 24px;background:#fff;border:1px solid #e2ded5;text-decoration:none" style-hover="border-color:#1c1c1c">
+<pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.65;white-space:pre-wrap;color:#2e2c27">{{ p.body }}</pre>
+<div style="display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid #ebe8e0;padding-top:10px"><span style="font-family:'Newsreader',serif;font-size:20px;font-style:italic">{{ p.title }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a8578">#{{ p.id }}</span></div>
+</a>
+</sc-for>
+</div>
+</div>
+<div onClick="{{ toggleFeed }}" style="position:absolute;inset:34px 0 0 0;background:rgba(28,28,28,.25);transition:opacity .35s;opacity:{{ dimOp }};pointer-events:{{ dimPe }}"></div>
+<aside style="position:absolute;top:34px;right:0;bottom:0;width:400px;background:#fbfaf6;border-left:1px solid #1c1c1c;display:flex;flex-direction:column;transition:transform .45s cubic-bezier(.2,.8,.2,1);transform:{{ drawerX }}">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid #e2ded5;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em"><span>FEED · MAIS RECENTES</span><span onClick="{{ toggleFeed }}" style="cursor:pointer;color:#8a8578">fechar ✕</span></div>
+<div style="flex:1;overflow:auto">
+<sc-for list="{{ posts }}" as="p" hint-placeholder-count="6">
+<a href="#" style="display:flex;flex-direction:column;gap:5px;padding:16px 24px;border-bottom:1px solid #ebe8e0;text-decoration:none" style-hover="background:#f1eee6">
+<div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a8578"><span>{{ p.date }}</span><span>@xampuzordmin</span></div>
+<div style="font-family:'Newsreader',serif;font-size:20px">{{ p.title }}</div>
+<div style="font-family:'Newsreader',serif;font-size:15px;font-style:italic;color:#5a574f">{{ p.first }}</div>
+</a>
+</sc-for>
+</div>
+<div style="display:flex;justify-content:space-between;padding:14px 24px;border-top:1px solid #e2ded5;font-family:'JetBrains Mono',monospace;font-size:12px"><span style="color:#c4521c">Assinar /feed.atom</span><span style="color:#8a8578">RSS 2.0</span></div>
+</aside>
+</div>
+</div>
+</section>
+<section style="padding:64px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:6px;font-family:'JetBrains Mono',monospace;color:#2a2a2a">
+<div style="font-size:13px;letter-spacing:.12em;text-transform:uppercase">Rodada 1 · Xampu Para Ossos · Home estilo Atom/RSS</div>
+<div style="font-size:13px;color:#555">1a Leitor de feed · 1b Atom cru · 1c Arquivo editorial</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start">
+
+<div id="1a" style="width:1280px;flex:none;display:flex;flex-direction:column;gap:12px">
+<div style="font-family:'JetBrains Mono',monospace;font-size:13px;display:flex;gap:10px;align-items:center"><span style="background:#1c1c1c;color:#fff;padding:3px 8px">1a</span><span>Leitor de feed — lista + painel de leitura</span></div>
+<div style="height:820px;background:#f6f4ef;color:#1c1c1c;display:grid;grid-template-rows:auto 1fr;box-shadow:0 20px 60px rgba(0,0,0,.15)">
+<header style="display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid #e2ded5">
+<div style="display:flex;align-items:center;gap:12px"><img src="uploads/Untitled.jpg" style="width:28px;height:28px;image-rendering:pixelated"><span style="font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:.14em;font-weight:500">XAMPU PARA OSSOS</span></div>
+<nav style="display:flex;gap:24px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em;color:#555"><a href="#">Sobre</a><a href="#">Depoimentos</a><a href="#">Tema</a><a href="#">Entrar</a><a href="#" style="color:#1c1c1c;border-bottom:1px solid #1c1c1c">Cadastrar pseudônimo</a></nav>
+</header>
+<div style="display:grid;grid-template-columns:200px 380px 1fr;min-height:0">
+<aside style="border-right:1px solid #e2ded5;padding:24px 20px;display:flex;flex-direction:column;gap:22px;font-family:'JetBrains Mono',monospace;font-size:12px">
+<div style="display:flex;flex-direction:column;gap:10px"><div style="color:#8a8578;letter-spacing:.1em">FEEDS</div><div style="display:flex;justify-content:space-between;font-weight:500"><span>Todos os poemas</span><span style="color:#8a8578">{{ count }}</span></div><div style="display:flex;justify-content:space-between;color:#555"><span>@xampuzordmin</span><span style="color:#8a8578">{{ count }}</span></div><div style="color:#555">Não lidos</div><div style="color:#555">Curtidos ♡</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><div style="color:#8a8578;letter-spacing:.1em">ARQUIVO</div><div style="color:#555">2026</div><div style="color:#555">2025</div></div>
+<div style="margin-top:auto;display:flex;align-items:center;gap:8px;color:#c4521c"><span style="width:8px;height:8px;background:#c4521c;border-radius:50%"></span>Assinar /feed.atom</div>
+</aside>
+<div style="border-right:1px solid #e2ded5;overflow:hidden;display:flex;flex-direction:column">
+<sc-for list="{{ posts }}" as="p" hint-placeholder-count="6">
+<div onClick="{{ p.select }}" style="padding:18px 22px;border-bottom:1px solid #ebe8e0;cursor:pointer;display:flex;flex-direction:column;gap:6px;background:{{ p.bgA }}" style-hover="background:#efece5">
+<div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a8578"><span>{{ p.date }}</span><span>#{{ p.id }}</span></div>
+<div style="font-size:21px;font-weight:500">{{ p.title }}</div>
+<div style="font-size:15px;color:#5a574f;font-style:italic;line-height:1.4">{{ p.first }}</div>
+</div>
+</sc-for>
+</div>
+<article style="padding:48px 64px;overflow:hidden;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:column;gap:8px"><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8a8578;display:flex;gap:16px"><span>@xampuzordmin</span><span>{{ cur.date }}</span><span>👁 {{ cur.views }}</span></div><h1 style="margin:0;font-size:52px;font-weight:400;letter-spacing:-.01em">{{ cur.title }}</h1></div>
+<pre style="margin:0;font-family:'Newsreader',serif;font-size:21px;line-height:1.6;white-space:pre-wrap;tab-size:4">{{ cur.body }}</pre>
+<div style="display:flex;gap:20px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#555;border-top:1px solid #e2ded5;padding-top:16px"><span>♡ 0</span><span>Compartilhar</span><span>Comentários (0)</span><span style="margin-left:auto">← anterior · próximo →</span></div>
+</article>
+</div>
+</div>
+</div>
+
+<div id="1b" style="width:1280px;flex:none;display:flex;flex-direction:column;gap:12px">
+<div style="font-family:'JetBrains Mono',monospace;font-size:13px;display:flex;gap:10px;align-items:center"><span style="background:#1c1c1c;color:#fff;padding:3px 8px">1b</span><span>Atom cru — o feed como estética</span></div>
+<div style="background:#0f1110;color:#d8dcd4;font-family:'IBM Plex Mono',monospace;padding:40px 0;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+<div style="max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:36px;padding:0 40px">
+<header style="display:flex;flex-direction:column;gap:18px">
+<div style="color:#5f6b5f;font-size:13px">&lt;?xml version="1.0" encoding="utf-8"?&gt;</div>
+<div style="display:flex;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:14px"><img src="uploads/Untitled.jpg" style="width:36px;height:36px;image-rendering:pixelated"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:#5f6b5f">&lt;feed&gt; &lt;title&gt;</span><span style="font-size:22px;letter-spacing:.14em;color:#f2f4ee">XAMPU PARA OSSOS</span></div></div>
+<nav style="display:flex;gap:20px;font-size:13px;color:#9aa596"><a href="#">sobre</a><a href="#">depoimentos</a><a href="#">tema</a><a href="#">entrar</a><a href="#" style="color:#b8e07a">+ pseudônimo</a></nav>
+</div>
+<div style="display:flex;gap:24px;font-size:12px;color:#5f6b5f;border-top:1px solid #232823;border-bottom:1px solid #232823;padding:10px 0"><span>&lt;updated&gt;2026-09-30&lt;/updated&gt;</span><span>&lt;author&gt;@xampuzordmin&lt;/author&gt;</span><span style="margin-left:auto;color:#b8e07a">↗ /feed.atom</span></div>
+</header>
+<sc-for list="{{ posts }}" as="p" hint-placeholder-count="4">
+<div style="display:grid;grid-template-columns:120px 1fr;gap:28px">
+<div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:#5f6b5f;padding-top:6px"><span>&lt;entry&gt;</span><span style="color:#9aa596">{{ p.iso }}</span><span>id:{{ p.id }}</span></div>
+<div style="display:flex;flex-direction:column;gap:12px;border-left:1px solid #232823;padding-left:28px">
+<a href="#" style="font-family:'Spectral',serif;font-size:30px;color:#f2f4ee;font-style:italic">{{ p.title }}</a>
+<pre style="margin:0;font-family:'Spectral',serif;font-size:18px;line-height:1.6;color:#bfc5ba;white-space:pre-wrap">{{ p.excerpt }}</pre>
+<div style="font-size:12px;color:#5f6b5f;display:flex;gap:18px"><span style="color:#b8e07a">ler inteiro →</span><span>♡ 0</span><span>&lt;/entry&gt;</span></div>
+</div>
+</div>
+</sc-for>
+<div style="text-align:center;font-size:12px;color:#5f6b5f">&lt;link rel="next"/&gt; carregar mais</div>
+</div>
+</div>
+</div>
+
+<div id="1c" style="width:1280px;flex:none;display:flex;flex-direction:column;gap:12px">
+<div style="font-family:'JetBrains Mono',monospace;font-size:13px;display:flex;gap:10px;align-items:center"><span style="background:#1c1c1c;color:#fff;padding:3px 8px">1c</span><span>Arquivo editorial — índice cronológico clássico</span></div>
+<div style="background:#fbfaf6;color:#20201c;padding:56px 0 72px;box-shadow:0 20px 60px rgba(0,0,0,.15)">
+<div style="max-width:980px;margin:0 auto;padding:0 40px;display:flex;flex-direction:column;gap:56px">
+<header style="display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center">
+<img src="uploads/Untitled.jpg" style="width:44px;height:44px;image-rendering:pixelated">
+<div style="font-family:'Newsreader',serif;font-size:56px;font-weight:400;letter-spacing:.02em">Xampu Para Ossos</div>
+<nav style="display:flex;gap:28px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#6b675c;border-top:1px solid #20201c;border-bottom:1px solid #20201c;padding:10px 24px"><a href="#">Poemas</a><a href="#">Arquivo</a><a href="#">Sobre</a><a href="#">Depoimentos</a><a href="#">Tema</a><a href="#">Entrar</a><a href="#" style="color:#a3361c">RSS</a></nav>
+</header>
+<div style="display:flex;flex-direction:column">
+<div style="display:grid;grid-template-columns:140px 1fr 80px;gap:24px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;color:#8a8578;padding-bottom:12px;border-bottom:1px solid #20201c"><span>DATA</span><span>POEMA</span><span style="text-align:right">Nº</span></div>
+<sc-for list="{{ posts }}" as="p" hint-placeholder-count="8">
+<a href="#" style="display:grid;grid-template-columns:140px 1fr 80px;gap:24px;align-items:baseline;padding:22px 0;border-bottom:1px solid #e4e0d6;text-decoration:none" style-hover="background:#f3f0e8">
+<span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#6b675c">{{ p.date }}</span>
+<span style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'Newsreader',serif;font-size:28px">{{ p.title }}</span><span style="font-family:'Newsreader',serif;font-style:italic;font-size:17px;color:#6b675c">{{ p.first }}</span></span>
+<span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8a8578;text-align:right">{{ p.id }}</span>
+</a>
+</sc-for>
+</div>
+<div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:12px;color:#6b675c"><span>← mais recentes</span><span>página 1</span><span>mais antigos →</span></div>
+</div>
+</div>
+</div>
+
+</div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const POSTS = [
+  {id:450,title:'pescaria',date:'27 jun 2026',iso:'2026-06-27',views:18,body:"Eu nunca pesquei.\n\nNunca pesquei em um rio\nNem fui assim o único à\npescar qualquer coisa;\nNunca realmente nem em\nPesqueiros assim coisa de\nQuilos! Histórias bigodudas\nE pernas mais cabeludas\nDesses robalos e\ntilápias.\n\nAh, o galeguês...\n...\n\t[Como é\n\t\tsubestimável...]"},
+  {id:448,title:'outronomhetnom-mesquinhol',date:'24 jun 2026',iso:'2026-06-24',views:0,body:"- outronômio d'outro heterônimo : * -\n\nChamo-me A.Mesquinhol,\nCarrego comigo cestas -\nEu e minhas frutas\nRídiculas e nojentas;"},
+  {id:547,title:'suckersprayer',date:'19 jun 2026',iso:'2026-06-19',views:0,body:"Querida, não sinta-se assim,\nNão é tão especial assim\nnão saber amar e estar\nsempre tentando."},
+  {id:457,title:'precejun',date:'12 jun 2026',iso:'2026-06-12',views:0,body:"- ##prece junina pré-invernal## -\n\nDevoção múltipla e eterna,\nassim se faz nesta terra:"},
+  {id:487,title:'sombramedoHmm',date:'05 jun 2026',iso:'2026-06-05',views:0,body:"Sob a sombra do medo\nDe tornar-se o quê\nNunca se foi,\nConquistar titãs"},
+  {id:449,title:'pequenhomunculo',date:'28 mai 2026',iso:'2026-05-28',views:0,body:"Pequeno Homúnculo;\nEssas palavras\nMal-contidas, essas\nPressas sentidas e"},
+  {id:410,title:'baladzebr',date:'20 mai 2026',iso:'2026-05-20',views:0,body:"Escuta-me,\nO medo me domina as\nentranhas;"},
+  {id:447,title:'odetectonica',date:'11 mai 2026',iso:'2026-05-11',views:0,body:"==**ode tectônica**==\n\nÉ uma terra\nMaravilhosa\nQue junta-se\nE separa-se"}
+];
+class Component extends DCLogic {
+  state = { sel: 0 };
+  renderVals() {
+    const posts = POSTS.map((p, i) => {
+      const lines = p.body.split('\n').filter(l => l.trim());
+      return { ...p, first: lines[0].replace(/[#*=]/g,'').trim(), excerpt: p.body.split('\n').slice(0,5).join('\n'),
+        bgA: i === this.state.sel ? '#ebe7dd' : 'transparent', select: () => this.setState({ sel: i }) };
+    });
+    const TAGS = {450:['memória','humor'],448:['heterônimos'],547:['amor'],457:['prece','festas'],487:['medo'],449:['metafísica'],410:['medo','balada'],447:['terra','ode']};
+    const MON = {jan:'Janeiro',fev:'Fevereiro',mar:'Março',abr:'Abril',mai:'Maio',jun:'Junho',jul:'Julho',ago:'Agosto',set:'Setembro',out:'Outubro',nov:'Novembro',dez:'Dezembro'};
+    const tag = this.state.tag;
+    const yrs = this.state.yrs || {'2026':true}, mos = this.state.mos || {'2026-jun':true};
+    const tree = [];
+    const byYear = {};
+    POSTS.forEach(p => { const [, m, y] = p.date.split(' '); ((byYear[y] ||= {})[m] ||= []).push(p); });
+    byYear['2025'] = byYear['2025'] || {}; // anos anteriores sem dados reais no mock
+    Object.keys(byYear).sort().reverse().forEach(y => {
+      const months = byYear[y], total = Object.values(months).flat().length;
+      tree.push({ label: y, count: '(' + total + ')', pad: '0px', size: '19px', italic: 'normal', arrow: yrs[y] ? '▼' : '▶', toggle: () => this.setState({ yrs: { ...yrs, [y]: !yrs[y] } }) });
+      if (!yrs[y]) return;
+      Object.keys(months).forEach(m => {
+        const k = y + '-' + m;
+        tree.push({ label: MON[m], count: '(' + months[m].length + ')', pad: '18px', size: '17px', italic: 'normal', arrow: mos[k] ? '▼' : '▶', toggle: () => this.setState({ mos: { ...mos, [k]: !mos[k] } }) });
+        if (mos[k]) months[m].forEach(p => tree.push({ label: p.title, count: '', pad: '36px', size: '16px', italic: 'italic', arrow: '', toggle: () => {} }));
+      });
+    });
+    const counts = {};
+    Object.values(TAGS).flat().forEach(t => counts[t] = (counts[t] || 0) + 1);
+    const labels = Object.keys(counts).sort((a, b) => counts[b] - counts[a]).map(t => ({ name: t, n: '(' + counts[t] + ')', bg: t === tag ? '#ffee00' : 'transparent', pick: () => this.setState({ tag: t === tag ? null : t }) }));
+    const grid = posts.filter(p => !tag || TAGS[p.id].includes(tag)).map((p, i) => {
+      const dark = i % 6 === 3 || i % 6 === 5;
+      return { ...p, tags: TAGS[p.id], bg: dark ? '#000000' : '#ffffff', fg: dark ? '#ffffff' : '#000000' };
+    });
+    const side = this.state.side !== false;
+    const open = this.state.feed;
+    const extra = { tree, labels, grid, clearTag: () => this.setState({ tag: null }), clearLabel: tag ? 'limpar ✕' : '',
+      toggleSide: () => this.setState({ side: !side }), sideLabel: side ? '◂ ocultar arquivo' : '▸ arquivo & marcadores',
+      sideW: side ? '260px' : '0px', sideOp: side ? 1 : 0 };
+    extra.gallery = [1, 2, 3].map(i => ({ title: 'Título da imagem', n: '#' + i, slot: 'gal-' + i }));
+    return { ...extra, posts, count: POSTS.length, cur: posts[this.state.sel],
+      toggleFeed: () => this.setState(s => ({ feed: !s.feed })),
+      ribbonLabel: open ? 'fechar feed ▴' : 'abrir feed ▸',
+      drawerX: open ? 'translateX(0)' : 'translateX(101%)', dimOp: open ? 1 : 0, dimPe: open ? 'auto' : 'none' };
+  }
+}
+</script>
+</body>
+</html>

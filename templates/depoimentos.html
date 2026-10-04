@@ -6,9 +6,11 @@
 {% block content %}
 <div class="max-w-3xl mx-auto">
     <h2 class="text-2xl font-bold mb-6 cyber-glow">Depoimentos</h2>
-    <p class="opacity-70 mb-6">Um guestbook à moda antiga: deixe suas palavras sobre o blog.</p>
+    <p class="opacity-70 mb-6">Saudades do orkut, às vezes. Se quiser, deixe suas palavras sobre o Xampu, o projeto, o blog, ou a vida!</p>
 
-    {% if current_user.is_authenticated %}
+    {% if not setting('testimonials_open') %}
+    <p class="opacity-70 italic mb-8">Depoimentos fechados no momento.</p>
+    {% elif current_user.is_authenticated %}
     <form method="POST" action="{{ url_for('depoimentos') }}" class="mb-8">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <textarea name="body" required maxlength="2000" placeholder="Deixe seu depoimento..."

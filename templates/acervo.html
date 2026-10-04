@@ -1,0 +1,76 @@
+<!-- templates/acervo.html — painel do acervo (admin) -->
+{% extends "base.html" %}
+
+{% block title %}Acervo - Xampu Para Ossos{% endblock %}
+
+{% block ribbon_items %}
+<span class="xpo-accent">ACERVO</span>
+<span>{{ ribbon_post_count }} poemas no site</span>
+{% endblock %}
+
+{% block main_class %}{% endblock %}
+{% block flash_wrap_class %}max-w-4xl mx-auto px-4 pt-4{% endblock %}
+
+{% block content %}
+<main class="xpo-acervo">
+    <header class="xpo-acervo-head">
+        <span class="xpo-sidebar-title">PAINEL · <a href="{{ url_for('admin') }}">admin</a></span>
+        <h1>Publicação do acervo</h1>
+        <p>
+            Marque o que fica no site, desmarque o que sai. Desmarcar <em>oculta</em> o poema
+            (views, curtidas e comentários ficam guardados); marcar um arquivo que nunca foi
+            importado o importa agora. Nada muda até você aplicar.
+        </p>
+    </header>
+
+    <div class="xpo-acervo-tools">
+        <div class="xpo-acervo-chips" role="group" aria-label="Filtrar por estado">
+            <button type="button" data-filter="all" class="is-active">tudo <span data-count="all"></span></button>
+            <button type="button" data-filter="on">no site <span data-count="on"></span></button>
+            <button type="button" data-filter="hidden">ocultos <span data-count="hidden"></span></button>
+            <button type="button" data-filter="new">nunca importados <span data-count="new"></span></button>
+            <button type="button" data-filter="changed">alterados <span data-count="changed"></span></button>
+        </div>
+        <input type="search" id="acervoFilter" placeholder="filtrar por pasta ou título…" autocomplete="off">
+        <div class="xpo-acervo-bulk">
+            <button type="button" data-bulk="expand">abrir tudo</button>
+            <button type="button" data-bulk="collapse">fechar tudo</button>
+        </div>
+    </div>
+
+    <div id="acervoTree" class="xpo-acervo-tree" aria-live="polite">
+        <p class="xpo-acervo-empty">carregando o acervo…</p>
+    </div>
+
+    <section class="xpo-acervo-orphans" id="acervoOrphansWrap" hidden>
+        <h2 class="xpo-sidebar-title">POSTS SEM ARQUIVO <span class="xpo-count" id="acervoOrphansCount"></span></h2>
+        <p class="xpo-acervo-note">Criados pelo editor, ou com o texto editado no site depois de importados.</p>
+        <div id="acervoOrphans"></div>
+    </section>
+
+    <div class="xpo-acervo-bar" id="acervoBar" hidden>
+        <div class="xpo-acervo-bar-inner">
+            <span id="acervoSummary"></span>
+            <span class="xpo-acervo-bar-actions">
+                <button type="button" id="acervoReset">desfazer</button>
+                <button type="button" id="acervoReview" class="is-primary">revisar e aplicar</button>
+            </span>
+        </div>
+    </div>
+
+    <div class="xpo-acervo-modal" id="acervoModal" hidden>
+        <div class="xpo-acervo-modal-box" role="dialog" aria-modal="true" aria-labelledby="acervoModalTitle">
+            <h2 id="acervoModalTitle">Confirmar mudanças</h2>
+            <div id="acervoPlan"></div>
+            <div class="xpo-acervo-modal-actions">
+                <button type="button" id="acervoCancel">voltar</button>
+                <button type="button" id="acervoApply" class="is-primary">aplicar no site</button>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/acervo.js') }}?v=20261005"></script>
+{% endblock %}

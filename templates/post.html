@@ -3,10 +3,12 @@
 
 {% block title %}{{ post.title }} - Xampu Para Ossos{% endblock %}
 
-{% set permalink = url_for('view_post', post_id=post.id, _external=True) %}
-{% set share_image = url_for('static', filename=post.teaser_image, _external=True)
-                      if post.teaser_type == 'image' and post.teaser_image
-                      else url_for('static', filename='images/wp-icon.png', _external=True) %}
+{% set permalink = post_url(post, _external=True) %}
+{# capa própria tem prioridade; senão, o cartão com o poema inteiro (cards.py) #}
+{% set has_cover = post.teaser_type == 'image' and post.teaser_image %}
+{% set share_image = url_for('static', filename=post.teaser_image, _external=True) if has_cover
+                      else (url_for('post_card', slug=post.slug, _external=True) if post.slug
+                            else url_for('static', filename='images/og-default.png', _external=True)) %}
 {% set share_excerpt = post.body_html|striptags|truncate(160) %}
 
 {% block head %}
@@ -14,7 +16,12 @@
 <meta property="og:title" content="{{ post.title }}">
 <meta property="og:description" content="{{ share_excerpt }}">
 <meta property="og:url" content="{{ permalink }}">
+<meta property="og:site_name" content="Xampu Para Ossos">
 <meta property="og:image" content="{{ share_image }}">
+{% if not has_cover %}
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+{% endif %}
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ post.title }}">
 <meta name="twitter:description" content="{{ share_excerpt }}">
@@ -51,14 +58,14 @@
                 class="px-2 py-1 bg-transparent border border-current">
             <option value="">Do autor</option>
             <option value="inherit">Herdar</option>
-            <option value="dark">⚫ Preto</option>
-            <option value="light">⚪ Branco</option>
-            <option value="cyberpunk">💜 Cyberpunk</option>
-            <option value="matrix">💚 Matrix</option>
-            <option value="vaporwave">🌸 Vaporwave</option>
-            <option value="noir">🎬 Noir</option>
-            <option value="sunset">🌅 Sunset</option>
-            <option value="ocean">🌊 Ocean</option>
+            <option value="dark">Preto</option>
+            <option value="light">Branco</option>
+            <option value="cyberpunk">Cyberpunk</option>
+            <option value="matrix">Matrix</option>
+            <option value="vaporwave">Vaporwave</option>
+            <option value="noir">Noir</option>
+            <option value="sunset">Sunset</option>
+            <option value="ocean">Ocean</option>
         </select>
         <button id="zoomOut" aria-label="Diminuir zoom"
                 class="px-2 py-1 border border-current hover:bg-current hover:text-inverse">−</button>
@@ -117,7 +124,9 @@
         <p class="opacity-70 mb-4 italic">Nenhum comentário ainda.</p>
         {% endfor %}
 
-        {% if current_user.is_authenticated %}
+        {% if not setting('comments_open') %}
+        <p class="opacity-70 italic">Comentários fechados no momento.</p>
+        {% elif current_user.is_authenticated %}
         <form method="POST" action="{{ url_for('add_comment', post_id=post.id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <textarea name="body" required maxlength="2000" placeholder="Deixe um comentário..."

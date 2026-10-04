@@ -1,65 +1,73 @@
-<!-- templates/admin.html -->
+<!-- templates/admin.html — painel admin (dados via /api/admin/*, ver static/js/admin.js) -->
 {% extends "base.html" %}
 
-{% block title %}Admin Dashboard - Cybernetic Poetry{% endblock %}
+{% block title %}Painel - Xampu Para Ossos{% endblock %}
+
+{% block ribbon_items %}
+<span class="xpo-accent">PAINEL</span>
+<span>{{ ribbon_post_count }} poemas no site</span>
+{% endblock %}
+
+{% block main_class %}{% endblock %}
+{% block flash_wrap_class %}max-w-4xl mx-auto px-4 pt-4{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto">
-    <h2 class="text-2xl font-bold mb-6 cyber-glow">ADMIN CONTROL PANEL</h2>
-    
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="border border-current p-4">
-            <h3 class="text-lg font-bold mb-2">STATISTICS</h3>
-            <p>Total Posts: {{ posts|length }}</p>
-            <p>Total Users: {{ users|length }}</p>
-            <p>Total Tags: {{ tags|length }}</p>
+<main class="xpo-acervo xpo-admin">
+    <header class="xpo-acervo-head">
+        <span class="xpo-sidebar-title">PAINEL · @{{ current_user.username }}</span>
+        <h1>Xampu</h1>
+    </header>
+
+    <nav class="xpo-admin-tabs" role="tablist">
+        <button type="button" role="tab" data-tab="posts">Posts</button>
+        <button type="button" role="tab" data-tab="moderacao">Moderação</button>
+        <button type="button" role="tab" data-tab="usuarios">Usuários</button>
+        <button type="button" role="tab" data-tab="site">Site</button>
+        <a href="{{ url_for('admin_acervo') }}">Acervo ↗</a>
+        <a href="{{ url_for('galeria') }}">Galeria ↗</a>
+    </nav>
+
+    <section data-panel="posts" hidden>
+        <div class="xpo-acervo-tools">
+            <div class="xpo-acervo-chips" role="group" aria-label="Filtrar posts">
+                <button type="button" data-post-filter="all" class="is-active">todos <span data-post-count="all"></span></button>
+                <button type="button" data-post-filter="visible">no site <span data-post-count="visible"></span></button>
+                <button type="button" data-post-filter="hidden">ocultos <span data-post-count="hidden"></span></button>
+            </div>
+            <input type="search" id="postFilter" placeholder="filtrar por título…" autocomplete="off">
+            <select id="postSort" aria-label="Ordenar">
+                <option value="recent">mais recentes</option>
+                <option value="views">mais vistos</option>
+                <option value="title">título (a–z)</option>
+            </select>
+            <button type="button" id="viewsResetAll" class="is-danger">zerar todas as views</button>
         </div>
-        
-        <div class="border border-current p-4">
-            <h3 class="text-lg font-bold mb-2">TOP POSTS</h3>
-            {% for post in posts[:3] %}
-            <p class="text-sm">{{ post.title }} ({{ post.views }} views)</p>
-            {% endfor %}
-        </div>
-        
-        <div class="border border-current p-4">
-            <h3 class="text-lg font-bold mb-2">RECENT USERS</h3>
-            {% for user in users[:3] %}
-            <p class="text-sm">@{{ user.username }} - {{ user.created_at.strftime('%Y-%m-%d') }}</p>
-            {% endfor %}
-        </div>
-    </div>
-    
-    <div class="border border-current p-4">
-        <h3 class="text-lg font-bold mb-4">ALL POSTS</h3>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="border-b border-current">
-                        <th class="text-left p-2">ID</th>
-                        <th class="text-left p-2">Title</th>
-                        <th class="text-left p-2">Author</th>
-                        <th class="text-left p-2">Views</th>
-                        <th class="text-left p-2">Created</th>
-                        <th class="text-left p-2">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for post in posts %}
-                    <tr class="border-b border-current">
-                        <td class="p-2">{{ post.id }}</td>
-                        <td class="p-2">{{ post.title }}</td>
-                        <td class="p-2">@{{ post.author.username }}</td>
-                        <td class="p-2">{{ post.views }}</td>
-                        <td class="p-2">{{ post.created_at.strftime('%Y-%m-%d') }}</td>
-                        <td class="p-2">
-                            <a href="{{ url_for('edit_post', post_id=post.id) }}" class="underline">Edit</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+        <div id="postList" class="xpo-acervo-tree"><p class="xpo-acervo-empty">carregando posts…</p></div>
+        <button type="button" id="postMore" class="xpo-admin-more" hidden>mostrar mais</button>
+    </section>
+
+    <section data-panel="moderacao" hidden>
+        <h2 class="xpo-sidebar-title">COMENTÁRIOS <span class="xpo-count" id="commentCount"></span></h2>
+        <div id="commentList" class="xpo-acervo-tree"><p class="xpo-acervo-empty">carregando…</p></div>
+        <h2 class="xpo-sidebar-title xpo-admin-gap">DEPOIMENTOS <span class="xpo-count" id="testimonialCount"></span></h2>
+        <div id="testimonialList" class="xpo-acervo-tree"></div>
+    </section>
+
+    <section data-panel="usuarios" hidden>
+        <p class="xpo-acervo-note">Bloquear derruba as sessões da conta e impede o login. Apagar remove a conta e o que ela escreveu.</p>
+        <div id="userList" class="xpo-acervo-tree"><p class="xpo-acervo-empty">carregando…</p></div>
+    </section>
+
+    <section data-panel="site" hidden>
+        <h2 class="xpo-sidebar-title">PORTAS DO SITE</h2>
+        <p class="xpo-acervo-note">Desligar fecha na hora — útil se aparecer spam no dia da divulgação.</p>
+        <div id="switchList" class="xpo-admin-switches"></div>
+        <h2 class="xpo-sidebar-title xpo-admin-gap">ESTADO</h2>
+        <dl id="siteStatus" class="xpo-admin-status"></dl>
+    </section>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}?v=20261007"></script>
 {% endblock %}

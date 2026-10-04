@@ -28,15 +28,15 @@
                     </select>
 
                     <select name="post_theme" id="themeSelector" class="px-2 py-1 bg-transparent border border-current">
-                        <option value="inherit" {% if post and post.post_theme == 'inherit' %}selected{% endif %}>🎨 Tema: Herdar</option>
-                        <option value="dark" {% if post and post.post_theme == 'dark' %}selected{% endif %}>⚫ Preto</option>
-                        <option value="light" {% if post and post.post_theme == 'light' %}selected{% endif %}>⚪ Branco</option>
-                        <option value="cyberpunk" {% if post and post.post_theme == 'cyberpunk' %}selected{% endif %}>💜 Cyberpunk</option>
-                        <option value="matrix" {% if post and post.post_theme == 'matrix' %}selected{% endif %}>💚 Matrix</option>
-                        <option value="vaporwave" {% if post and post.post_theme == 'vaporwave' %}selected{% endif %}>🌸 Vaporwave</option>
-                        <option value="noir" {% if post and post.post_theme == 'noir' %}selected{% endif %}>🎬 Noir</option>
-                        <option value="sunset" {% if post and post.post_theme == 'sunset' %}selected{% endif %}>🌅 Sunset</option>
-                        <option value="ocean" {% if post and post.post_theme == 'ocean' %}selected{% endif %}>🌊 Ocean</option>
+                        <option value="inherit" {% if post and post.post_theme == 'inherit' %}selected{% endif %}>Tema: Herdar</option>
+                        <option value="dark" {% if post and post.post_theme == 'dark' %}selected{% endif %}>Preto</option>
+                        <option value="light" {% if post and post.post_theme == 'light' %}selected{% endif %}>Branco</option>
+                        <option value="cyberpunk" {% if post and post.post_theme == 'cyberpunk' %}selected{% endif %}>Cyberpunk</option>
+                        <option value="matrix" {% if post and post.post_theme == 'matrix' %}selected{% endif %}>Matrix</option>
+                        <option value="vaporwave" {% if post and post.post_theme == 'vaporwave' %}selected{% endif %}>Vaporwave</option>
+                        <option value="noir" {% if post and post.post_theme == 'noir' %}selected{% endif %}>Noir</option>
+                        <option value="sunset" {% if post and post.post_theme == 'sunset' %}selected{% endif %}>Sunset</option>
+                        <option value="ocean" {% if post and post.post_theme == 'ocean' %}selected{% endif %}>Ocean</option>
                     </select>
 
                     <input type="text" name="tags" id="tagInput"
@@ -109,5 +109,5 @@
     </form>
 </div>
 
-<script src="{{ url_for('static', filename='js/editor.js') }}?v=20260817"></script>
+<script src="{{ url_for('static', filename='js/editor.js') }}?v=20261006"></script>
 {% endblock %}

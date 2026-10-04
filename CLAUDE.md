@@ -44,9 +44,116 @@ flask seed-db
 # Migrações (se atualizando de versão antiga): post_theme e body_md
 python tools/migrate_add_post_theme.py
 python tools/migrate_add_post_body_md.py
+python tools/migrate_add_post_source.py   # source_path + hidden (painel do acervo)
+python tools/migrate_add_post_slug.py     # slug + post_slug_alias (URLs com título)
+python tools/migrate_prelaunch.py         # user.is_banned + site_setting (painel admin)
 
 # Banco SQLite: instance/xampuparaossos.db
 ```
+
+### Sync do Google Drive (acervo `poesia/`)
+```bash
+# Drive "poesia etc" -> poesia/ (mão única, rclone copy: nunca apaga local)
+tools/drive_sync.sh --dry-run        # ensaio
+tools/drive_sync.sh                  # roda agora
+
+# Timer de usuário (a cada 5 min, sem sudo; units em tools/systemd/)
+systemctl --user status xampu-drive-sync.timer
+journalctl --user -u xampu-drive-sync.service -n 50
+
+# Config: ~/.config/xampuzord/drive-sync.env (DRIVE_SRC, DRIVE_DEST)
+# rclone: ~/.local/bin/rclone, remote "gdrive" (scope drive.readonly)
+```
+O sync traz os arquivos; o acervo em geral continua com importação manual
+(`tools/import_posts.py`). Exceção: a caixa **`0_publicar/`** do Drive
+(Google Docs exportados como `.txt`). Com `PUBLISH_INBOX=1` no
+`drive-sync.env`, `tools/publish_inbox.py` roda após cada sync e publica
+poema novo de lá como post (data = agora; tags = subpastas + ano). Ledger em
+`instance/publish_ledger.json`: edição no Drive atualiza o post, post apagado
+no site não volta, poema já existente (mesmo título e texto) é adotado sem
+duplicar.
+
+### URLs dos posts (`/post/<slug>`)
+`slugify()` em `app.py`: título sem acento, minúsculo, hífens, até 80 chars
+("xampu é o quê não é" → `xampu-e-o-que-nao-e`). Título repetido ganha `-2`,
+`-3`…; título sem nenhuma letra ("☆", "500") vira `poema-<id>` (número puro
+colidiria com a rota por id). O slug é atribuído no hook `before_flush`
+(`assign_post_slugs`) — vale para editor, importador, `publish_inbox` e painel
+do acervo sem código extra. `/post/<id>` responde 301 para o slug; título
+editado gera slug novo e o antigo vira `PostSlugAlias` (301). Feeds: `<link>`
+com slug, `<id>/<guid>` com a URL por id (estável). Gerar links com
+`post_url(post)` (global no Jinja) / `post.slug` no JS — nunca
+`url_for('view_post', ...)` com id. Rotas de ação (`/post/<id>/edit|delete|
+like|comment`) continuam por id.
+
+### Painel do acervo (`/admin/acervo`, admin)
+Árvore de `poesia/` com checkbox por pasta e por poema: marcado = no site.
+Desmarcar **oculta** (`Post.hidden`: some de home, busca, feeds, arquivo,
+ribbon e `Tag.count`; post vira 404 para não-admin, mas guarda views/curtidas/
+comentários). Marcar arquivo nunca importado **importa** (regras do
+`import_posts.py`). O front manda só as diferenças; revisão em dry-run antes de
+aplicar. Lógica em `acervo.py`; posts se ligam ao arquivo por
+`Post.source_path` (relativo a `poesia/`), preenchido pelo importador,
+pelo `publish_inbox.py` e, para posts antigos, por conteúdo
+(`tools/migrate_add_post_source.py`). Consultas públicas usam
+`public_posts()`/`get_visible_post_or_404()` — **não usar `Post.query` cru
+em rota pública**.
+
+### Painel admin (`/admin`)
+Abas **Posts · Moderação · Usuários · Site** (+ link para o Acervo), front em
+`static/js/admin.js`, dados via `/api/admin/*` (decorator `admin_required`).
+- Posts: título editável inline (slug novo + alias), zerar views (por poema e
+  global com confirmação "zerar"), ocultar/mostrar.
+- Moderação: comentários e depoimentos recentes, com apagar.
+- Usuários: bloquear (`User.is_banned` → `load_user` devolve None e o login
+  recusa) e apagar (leva comentários/depoimentos). Admin e a própria conta não.
+- Site: interruptores em `site_setting` (`registration_open`, `comments_open`,
+  `testimonials_open`; ler com `setting(key)`) + estado: último backup e última
+  publicação automática (`instance/publish_status.json`).
+
+### Rate limit e CAPTCHA
+O Cloudflare Tunnel entrega tudo vindo de 127.0.0.1; a chave do limiter é
+`client_ip()` (header `CF-Connecting-IP`, **só** quando o remoto é loopback).
+Não há limite global: só as rotas de escrita têm limite explícito.
+Cadastro: honeypot (`website`) sempre; Cloudflare Turnstile quando
+`TURNSTILE_SITE_KEY` e `TURNSTILE_SECRET_KEY` estão no `.env`.
+`flask seed-db` recusa rodar em produção; `flask prune-seed-users` remove as
+contas `poet_N` do seed.
+
+### Cartão de compartilhamento e buscadores
+`GET /post/<slug>/card.png` (`cards.py`, Pillow): 1200×630 nas cores do tema,
+com o poema inteiro no maior corpo que couber (uma coluna enquanto legível,
+até 5; verso não é quebrado se houver alternativa). Cache em
+`instance/cards/<id>-<hash>.png` (hash de título+corpo+tema; mudar o layout =
+subir `CARD_VERSION`). `post.html` usa o cartão como `og:image` (capa própria
+tem prioridade); demais páginas usam `static/images/og-default.png`.
+`/robots.txt` e `/sitemap.xml` (só posts visíveis).
+
+### Backup do banco
+```bash
+tools/db_backup.sh                                   # agora (sqlite .backup + integrity_check)
+systemctl --user status xampu-db-backup.timer        # diário 03:00, guarda 14
+ls ~/backups/xampu-db/
+```
+
+### ⚠️ O working tree é a produção
+O gunicorn e o timer do Drive rodam direto deste diretório. Mudança de schema:
+**aplicar a migração no banco antes de pôr o modelo novo no `app.py`** — senão
+o próximo restart (ou reboot) derruba o site.
+
+### Galeria
+```bash
+# graphics/galeria/*.jpg|png|… + graphics/galeria/subtitles.json -> /galeria
+#   subtitles.json: {"arquivo.jpg": {"title": "...", "caption": "..."}}
+python tools/import_gallery.py --dry-run
+python tools/import_gallery.py       # idempotente; reedita título/legenda
+# Banco antigo sem a tabela: python tools/migrate_add_gallery.py
+```
+O `subtitles.json` só é lido quando o script roda (restart não o aplica), e só
+reaplica uma legenda se o JSON mudou desde o último import (ledger
+`galeria_meta`). Edição do dia a dia: em `/galeria`, logado como admin, cada
+imagem tem "editar" (título, legenda, data, trocar arquivo) —
+`POST /galeria/<id>/edit`.
 
 ### CLI de Gestão de Usuários
 ```bash
@@ -85,6 +192,9 @@ Post {
     teaser_type: 'auto'|'image'|'none',
     teaser_image: str (path relativo a /static/),
     views: int,
+    source_path: str|None (arquivo em poesia/, NULL = editor),
+    slug: str (URL /post/<slug>, único; ver "URLs dos posts"),
+    hidden: bool (oculto pelo painel do acervo),
     author_id, created_at, updated_at
 }
 ```
@@ -165,6 +275,8 @@ Botões de compartilhar na página do post:
 GET  /                          → Homepage com 9 posts iniciais
 GET  /sobre                     → Página sobre o projeto
 GET  /api/posts?page=N&tags=[]  → Infinite scroll + busca (título/tags/conteúdo)
+GET  /post/<slug>               → Post (oculto = 404 p/ não-admin)
+GET  /post/<id>                 → 301 para /post/<slug> (slug antigo também)
 POST /post/new                  → Criar post (JSON, requer auth, rate: 20/hora)
 POST /post/<id>/edit            → Editar (ownership check)
 POST /post/<id>/delete          → Deletar (+ cleanup de imagem)
@@ -180,6 +292,11 @@ GET|POST /depoimentos           → Guestbook (POST requer login, rate: 10/hora)
 POST /depoimento/<id>/delete    → Deletar depoimento (admin)
 GET  /feed.xml[?tag=X]          → Feed RSS 2.0, corpo completo (global ou por tag)
 GET  /feed.atom[?tag=X]         → Feed Atom 1.0, corpo completo (global ou por tag)
+GET  /post/<slug>/card.png      → Cartão de compartilhamento (og:image)
+GET  /robots.txt, /sitemap.xml  → Buscadores
+GET  /admin                     → Painel admin (abas; dados em /api/admin/*)
+GET  /admin/acervo              → Painel do acervo (admin)
+GET|POST /api/admin/acervo      → Estado do acervo / aplicar include/exclude (dry_run)
 ```
 
 ### Security Notes
@@ -236,7 +353,9 @@ GET  /feed.atom[?tag=X]         → Feed Atom 1.0, corpo completo (global ou por
 
 Tag counting: `process_tags()` incrementa ao criar/editar e `decrement_tags()`
 decrementa ao editar/deletar (linhas que zeram são removidas). **Manter o
-count correto** ao mexer em tags.
+count correto** ao mexer em tags. Post oculto (`hidden`) não conta: ocultar
+decrementa, reexibir incrementa (`increment_tags`), e editar/apagar post oculto
+não mexe nas contagens.
 
 ### Known Issues / TODO
 

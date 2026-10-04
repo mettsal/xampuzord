@@ -9,28 +9,21 @@
         XAMPU PARA OSSOS
     </h1>
 
-    <div class="space-y-8 leading-relaxed">
-        <section>
-            <h2 class="text-2xl font-bold mb-4 border-b border-current pb-2">O que é isso?</h2>
-            <p class="mb-4">
-                "Poesia brasileira colonizada e antropomórfica. Um projeto para transformar mausoléu em santuário."
-                "Quando cheguei na internet, era tudo mato.""       </p>
-            <p class="mb-4">
-            <!--  -->
-            </p>
-        </section>
+    {% if current_user.is_authenticated and current_user.is_admin %}
+    <details class="xpo-galeria-edit mb-8"{% if editing %} open{% endif %}>
+        <summary>editar página</summary>
+        <form method="POST" action="{{ url_for('sobre_edit') }}" class="xpo-galeria-admin-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <textarea name="html" rows="22" style="width:100%;font-family:monospace">{{ sobre_source }}</textarea>
+            <p class="text-sm">HTML. Tags não permitidas são removidas. Vazio = volta ao texto original.</p>
+            <button type="submit" class="px-6 py-2 border border-current">salvar</button>
+        </form>
+    </details>
+    {% endif %}
 
-        
-
-        <section class="text-center py-8">
-            <!-- <div class="text-6xl mb-4"></div> -->
-            
-            <div class="mt-4">
-                <a href="{{ url_for('index') }}" class="px-6 py-2 border border-current hover:bg-current hover:text-inverse inline-block">
-                    ← Voltar ao Blog
-                </a>
-            </div>
-        </section>
-    </div>
-</div>
+    {% if sobre_custom %}
+    <div class="space-y-8 leading-relaxed">{{ sobre_custom|safe }}</div>
+    {% else %}
+{% include "_sobre_default.html" %}
+    {% endif %}
 {% endblock %}

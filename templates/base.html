@@ -12,8 +12,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=20261003">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261004">
-    {% block head %}{% endblock %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261010">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon-64.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    {% block head %}
+    {# padrão do site; post.html troca pelo cartão do poema #}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Xampu Para Ossos">
+    <meta property="og:title" content="Xampu Para Ossos">
+    <meta property="og:description" content="Poesia.">
+    <meta property="og:url" content="{{ request.base_url }}">
+    <meta property="og:image" content="{{ url_for('static', filename='images/og-default.png', _external=True) }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="{{ url_for('static', filename='images/og-default.png', _external=True) }}">
+    {% endblock %}
 </head>
 <body>
     <!-- Tema salvo aplicado antes do primeiro paint: sem isto o header/nav
@@ -57,13 +71,25 @@
                 <datalist id="tagSuggestions"></datalist>
                 <div id="searchDropdown" class="hidden xpo-search-dropdown"></div>
             </span>
-            <button id="themeToggle" class="xpo-nav-link">⚡ Tema</button>
+            <button id="themeToggle" class="xpo-nav-link xpo-theme-toggle" type="button" aria-label="Mudar tema">
+                {# sol ⇄ lua: um SVG só, o estado vem de body.dark (style.css) #}
+                <svg class="xpo-theme-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                    <mask id="xpoThemeMask">
+                        <rect width="24" height="24" fill="#fff"></rect>
+                        <circle class="xpo-theme-cut" cx="15.5" cy="8.5" r="4.6" fill="#000"></circle>
+                    </mask>
+                    <circle class="xpo-theme-disc" cx="12" cy="12" r="5" fill="currentColor" mask="url(#xpoThemeMask)"></circle>
+                    <path class="xpo-theme-rays" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"
+                          d="M12 2v1.5M12 20.5V22M2 12h1.5M20.5 12H22M4.93 4.93l1.06 1.06M18.01 18.01l1.06 1.06M4.93 19.07l1.06-1.06M18.01 5.99l1.06-1.06"></path>
+                </svg>
+                <span class="xpo-theme-label">Tema</span>
+            </button>
             {% if current_user.is_authenticated %}
                 {% if current_user.is_admin %}
                     <a href="{{ url_for('new_post') }}" class="xpo-nav-link">+ Novo Post</a>
                     <a href="{{ url_for('admin') }}" class="xpo-nav-link">Xampu</a>
                 {% endif %}
-                <a href="{{ url_for('logout') }}" class="xpo-nav-link">Sair ({{ current_user.username }})</a>
+                <a href="{{ url_for('logout') }}" class="xpo-nav-link">Sair <span class="xpo-keep-case">({{ current_user.username }})</span></a>
             {% else %}
                 <a href="{{ url_for('login') }}" class="xpo-nav-link">Entrar/Registrar como pseudônimo</a>
             {% endif %}
@@ -88,7 +114,7 @@
 
     <!-- Flag p/ main.js: logado salva preferências (tema) no servidor via /api/user/settings -->
     <script>window.currentUser = {{ 'true' if current_user.is_authenticated else 'false' }};</script>
-    <script src="{{ url_for('static', filename='js/main.js') }}?v=20261004"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=20261008"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

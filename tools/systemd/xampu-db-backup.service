@@ -1,0 +1,6 @@
+[Unit]
+Description=Xampu Para Ossos - backup diário do banco
+
+[Service]
+Type=oneshot
+ExecStart=%h/Documents/Github/xampuzord/tools/db_backup.sh
