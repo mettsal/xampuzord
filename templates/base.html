@@ -33,7 +33,7 @@
     <!-- Tema salvo aplicado antes do primeiro paint: sem isto o header/nav
          (que agora seguem o tema) piscam claro→escuro a cada carregamento,
          já que o main.js só roda no DOMContentLoaded. -->
-    <script>try { if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark'); } catch (e) {}</script>
+    <script>try { if (localStorage.getItem('theme') !== 'light') document.body.classList.add('dark'); } catch (e) { document.body.classList.add('dark'); }</script>
     <!-- Ribbon: topo de todas as páginas, só informativo (o toggle da lateral mora no header). -->
     <div class="xpo-ribbon">
         {% block ribbon_items %}

@@ -125,6 +125,7 @@
         const meta = el('span', 'acv-meta', `${day(p.created_at)} · 👁 ${p.views} · ♡ ${p.likes} · 💬 ${p.comments}`);
         row.append(title, meta);
         if (p.hidden) row.append(el('span', 'acv-badge', 'oculto'));
+        if (p.pinned) row.append(el('span', 'acv-badge', 'no topo'));
 
         const actions = el('span', 'acv-actions');
         actions.append(button('título', '', () => editTitle(row, p)));
@@ -137,6 +138,11 @@
                 } catch (err) { fail(err); }
             }));
         }
+        actions.append(button(p.pinned ? 'desafixar' : 'fixar no topo', '', async () => {
+            try {
+                replacePost(await api(`/api/admin/posts/${p.id}`, 'PATCH', { pinned: !p.pinned }));
+            } catch (err) { fail(err); }
+        }));
         actions.append(button(p.hidden ? 'mostrar' : 'ocultar', '', async () => {
             try {
                 replacePost(await api(`/api/admin/posts/${p.id}`, 'PATCH', { hidden: !p.hidden }));

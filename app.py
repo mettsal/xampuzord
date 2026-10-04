@@ -130,6 +130,8 @@ class Post(db.Model):
     # Oculto pelo painel do acervo: some de home, busca, feeds, arquivo e
     # contagens de Tag, mas mantém views/curtidas/comentários. Só admin vê.
     hidden = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    # Fixado no topo da home/busca pelo painel admin (ver feed_order()).
+    pinned = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     # URL do post (/post/<slug>), gerado do título em assign_post_slugs();
     # /post/<id> e slugs antigos (PostSlugAlias) redirecionam para cá.
     slug = db.Column(db.String(80), unique=True, index=True)
@@ -355,6 +357,10 @@ def public_posts():
     """Post.query sem os ocultos — base de tudo que o público vê."""
     return Post.query.filter(Post.hidden.is_(False))
 
+def feed_order():
+    """Ordem da home e do scroll infinito: fixados primeiro, depois os mais novos."""
+    return (Post.pinned.desc(), Post.created_at.desc())
+
 def ensure_visible(post):
     """Post oculto é 404 para todo mundo menos admin."""
     if post.hidden and not (current_user.is_authenticated and current_user.is_admin):
@@ -536,7 +542,7 @@ def save_teaser_image(file):
 @app.route('/')
 def index():
     """Main page with post grid + sidebar (arquivo ano/mês + marcadores)"""
-    initial_posts = public_posts().order_by(Post.created_at.desc()).limit(9).all()
+    initial_posts = public_posts().order_by(*feed_order()).limit(9).all()
     archive_years = build_archive_years()
     tag_counts = Tag.query.order_by(Tag.count.desc()).all()
     return render_template(
@@ -586,7 +592,7 @@ def api_posts():
 
     query = filter_by_search(public_posts(), tags_filter)
 
-    posts = query.order_by(Post.created_at.desc()).paginate(
+    posts = query.order_by(*feed_order()).paginate(
         page=page, per_page=9, error_out=False
     ).items
 
@@ -1067,6 +1073,7 @@ def _post_row(post, likes=0, comments=0):
         'id': post.id, 'title': post.title, 'slug': post.slug, 'url': post_url(post),
         'created_at': _iso(post.created_at), 'views': post.views or 0,
         'likes': likes, 'comments': comments, 'hidden': bool(post.hidden),
+        'pinned': bool(post.pinned),
         'source_path': post.source_path,
     }
 
@@ -1085,7 +1092,7 @@ def api_admin_posts():
 @admin_required
 def api_admin_post_update(post_id):
     """Edita título (slug novo + alias do antigo, via assign_post_slugs) e/ou
-    oculta/reexibe (mesmas regras de Tag.count do painel do acervo)."""
+    fixa/desafixa no topo da home e/ou oculta/reexibe (mesmas regras de Tag.count do painel do acervo)."""
     post = db.get_or_404(Post, post_id)
     data = request.get_json(silent=True) or {}
     if 'title' in data:
@@ -1094,6 +1101,8 @@ def api_admin_post_update(post_id):
             return jsonify({'error': 'Título vazio'}), 400
         post.title = title
         post.updated_at = utcnow()
+    if 'pinned' in data:
+        post.pinned = bool(data['pinned'])
     if 'hidden' in data:
         import acervo  # lazy, ver api_admin_acervo
         (acervo._hide if data['hidden'] else acervo._show)(post, defaultdict(list))

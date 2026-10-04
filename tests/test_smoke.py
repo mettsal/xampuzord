@@ -3,6 +3,7 @@
 #
 # Rodar:  python -m unittest discover -s tests -v
 import os
+from datetime import datetime
 from pathlib import Path
 import sys
 import tempfile
@@ -778,6 +779,26 @@ class SobreEditTest(SessionLoginMixin, BaseCase):
 
         admin.post('/sobre/edit', data={'html': ''})
         self.assertIn('O que é isso?', anon.get('/sobre').get_data(as_text=True))
+
+    def test_pinned_posts_come_first(self):
+        with app.app_context():
+            admin_id = User.query.filter_by(username='admin_teste').first().id
+            old = Post(title='Fixado antigo', body_html='<p>a</p>', author_id=admin_id,
+                       created_at=datetime(2001, 1, 1))
+            new = Post(title='Recente solto', body_html='<p>b</p>', author_id=admin_id,
+                       created_at=datetime(2030, 1, 1))
+            db.session.add_all([old, new])
+            db.session.commit()
+            old_id = old.id
+        admin = app.test_client()
+        self.login(admin, 'admin_teste')
+        res = admin.patch(f'/api/admin/posts/{old_id}', json={'pinned': True})
+        self.assertTrue(res.get_json()['pinned'])
+        titles = [p['title'] for p in app.test_client().get('/api/posts').get_json()]
+        self.assertEqual(titles[0], 'Fixado antigo')
+        admin.patch(f'/api/admin/posts/{old_id}', json={'pinned': False})
+        titles = [p['title'] for p in app.test_client().get('/api/posts').get_json()]
+        self.assertEqual(titles[0], 'Recente solto')
 
 
 if __name__ == '__main__':

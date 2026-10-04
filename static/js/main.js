@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Load saved theme
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedTheme = localStorage.getItem('theme') || 'dark';
     if (savedTheme === 'dark') {
         body.classList.add('dark');
         updateThemeButton(true);
